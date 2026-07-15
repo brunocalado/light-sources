@@ -1,0 +1,54 @@
+<div class="ls-config-main">
+  <div class="ls-drop-hint">
+    <i class="fa-solid fa-download" inert></i>
+    <p>{{localize "LIGHTSOURCES.Config.DropHint"}}</p>
+  </div>
+
+  {{#if sources.length}}
+  <ul class="ls-source-list">
+    {{#each sources}}
+    <li class="ls-source" data-source-id="{{this.id}}">
+      <img class="ls-icon" src="{{this.img}}" alt="{{this.name}}" data-uuid="{{this.uuid}}" draggable="true">
+      <div class="ls-info">
+        <span class="ls-name">
+          {{this.name}}
+          {{#if this.managedBy}}
+          <span class="ls-managed-badge" data-tooltip="{{localize 'LIGHTSOURCES.Config.ManagedByTooltip'}}">
+            <i class="fa-solid fa-plug" inert></i>{{this.managedBy}}
+          </span>
+          {{/if}}
+        </span>
+        <span class="ls-meta">
+          {{this.typeLabel}} &middot; {{this.durationLabel}}{{#if this.patternLabel}} &middot; {{this.patternLabel}}{{/if}}{{#if this.consume}} &middot; {{localize "LIGHTSOURCES.Config.Consumed"}}{{/if}}{{#if this.freeForAll}} &middot; {{localize "LIGHTSOURCES.Config.FreeForAll"}}{{/if}}
+        </span>
+      </div>
+      <div class="ls-controls">
+        <button type="button" data-action="openItem" data-tooltip="{{localize 'LIGHTSOURCES.Config.OpenItem'}}"
+                aria-label="{{localize 'LIGHTSOURCES.Config.OpenItem'}}">
+          <i class="fa-solid fa-book-open" inert></i>
+        </button>
+        <button type="button" data-action="sendToChat" data-tooltip="{{localize 'LIGHTSOURCES.Config.SendToChat'}}"
+                aria-label="{{localize 'LIGHTSOURCES.Config.SendToChat'}}">
+          <i class="fa-solid fa-comment" inert></i>
+        </button>
+        <button type="button" data-action="toggleFreeForAll" class="ls-toggle-free{{#if this.freeForAll}} ls-active{{/if}}"
+                data-tooltip="{{localize 'LIGHTSOURCES.Config.Grant'}}" aria-label="{{localize 'LIGHTSOURCES.Config.Grant'}}"
+                aria-pressed="{{this.freeForAll}}">
+          <i class="fa-solid fa-wand-magic-sparkles" inert></i>
+        </button>
+        <button type="button" data-action="editSource" data-tooltip="{{localize 'LIGHTSOURCES.Config.Edit'}}"
+                aria-label="{{localize 'LIGHTSOURCES.Config.Edit'}}">
+          <i class="fa-solid fa-pen-to-square" inert></i>
+        </button>
+        <button type="button" data-action="deleteSource" data-tooltip="{{localize 'LIGHTSOURCES.Config.Delete'}}"
+                aria-label="{{localize 'LIGHTSOURCES.Config.Delete'}}">
+          <i class="fa-solid fa-trash" inert></i>
+        </button>
+      </div>
+    </li>
+    {{/each}}
+  </ul>
+  {{else}}
+  <p class="ls-empty">{{localize "LIGHTSOURCES.Config.Empty"}}</p>
+  {{/if}}
+</div>

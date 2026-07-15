@@ -1,0 +1,352 @@
+/*!
+ * Light Sources
+ * Copyright (c) 2026 https://github.com/brunocalado
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3.
+ */
+
+import { MODULE_ID, FLAGS, DURATION_MODES, LIGHT_CHANGE_PRIORITY, EXPIRY_CHECK_INTERVAL_MS } from "./constants.js";
+import { findMatchingItems, buildChatCard, getItemQuantity, getQuantityPath } from "./helpers.js";
+
+/**
+ * Interval id of the real-time expiry ticker, so it is only ever started once
+ * per client.
+ * @type {number|null}
+ */
+let tickerId = null;
+
+/**
+ * Get the ActiveEffect this module uses to drive an Actor's light, if any.
+ * The module only ever keeps one such effect per actor at a time.
+ * @param {Actor} actor The actor to inspect.
+ * @returns {ActiveEffect|null} The module's light effect, or null.
+ */
+export function getLightEffect(actor) {
+  return actor.effects.find(e => e.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT)) ?? null;
+}
+
+/**
+ * Get the active light bookkeeping payload stored on an Actor's light effect.
+ * Used by the Token HUD to reflect the lit/unlit state.
+ * @param {Actor} actor The actor to inspect.
+ * @returns {object|null} The flag payload ({sourceId, patternId, patternName, itemName, mode, expiresAtWorld, expiresAtReal}) or null.
+ */
+export function getActiveLight(actor) {
+  return getLightEffect(actor)?.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT) ?? null;
+}
+
+/**
+ * Build the token light data for a light pattern. Only basic + animation fields
+ * are set; advanced light options on the token are deliberately left untouched.
+ * Used by the light editor's live preview, which writes directly to a token's
+ * light source without persisting.
+ * @param {object} pattern A light pattern ({id, name, light}), or any object
+ *   exposing a `light` configuration.
+ * @returns {object} Plain light data suitable for a Token light source.
+ */
+export function buildLightData(pattern) {
+  const light = foundry.utils.deepClone(pattern.light);
+  light.color = light.color || null;
+  light.animation = {
+    type: light.animation?.type || null,
+    speed: light.animation?.speed ?? 5,
+    intensity: light.animation?.intensity ?? 5,
+    reverse: !!light.animation?.reverse
+  };
+  return light;
+}
+
+/**
+ * Build the ActiveEffect `changes` array that overrides a token's light with a
+ * light pattern. One entry per basic/animation field, each an `override`
+ * targeting a native v14 `token.light.*` key (core strips the `token.` prefix and
+ * applies it to the TokenDocument — a core feature, independent of any game
+ * system). Only these keys are touched, so advanced light options (luminosity,
+ * attenuation, coloration, shadows, darkness) remain at the token's own base value.
+ * @param {object} pattern A light pattern ({id, name, light}) of a source.
+ * @returns {object[]} The change entries for `ActiveEffect#system#changes`.
+ */
+function buildLightChanges(pattern) {
+  const light = pattern.light ?? {};
+  const anim = light.animation ?? {};
+  const alpha = Number(light.alpha);
+  const entry = (key, value) => ({ key, value, type: "override", phase: "initial", priority: LIGHT_CHANGE_PRIORITY });
+  return [
+    entry("token.light.dim", Math.max(0, Number(light.dim) || 0)),
+    entry("token.light.bright", Math.max(0, Number(light.bright) || 0)),
+    entry("token.light.angle", Number(light.angle) || 360),
+    entry("token.light.color", light.color || null),
+    entry("token.light.alpha", Number.isFinite(alpha) ? alpha : 0.5),
+    entry("token.light.animation.type", anim.type || ""),
+    entry("token.light.animation.speed", Number(anim.speed) || 5),
+    entry("token.light.animation.intensity", Number(anim.intensity) || 5),
+    entry("token.light.animation.reverse", !!anim.reverse)
+  ];
+}
+
+/**
+ * Activate a light source on an Actor: optionally consume one item, then create
+ * an ActiveEffect that overrides the token's light. The effect lives on the
+ * Actor, so its light applies to every token of that actor across all scenes and
+ * follows the character; extinguishing is simply deleting the effect, which
+ * reverts the token to its original light with no stored snapshot.
+ * @param {Actor} actor The actor (world actor, or synthetic actor of an unlinked token).
+ * @param {object} source The registered light source definition. When
+ *   `source.freeForAll` is set, the item lookup and quantity consumption are
+ *   skipped entirely (regardless of `source.consume`), so every eligible actor
+ *   can use the light with no carried item.
+ * @param {object} pattern The light pattern ({id, name, light}) to light. A source
+ *   may own several patterns (e.g. a flashlight's wide vs. narrow beam);
+ *   consumption and duration are shared across all of them, only the emitted
+ *   light shape differs.
+ * @returns {Promise<void>}
+ */
+export async function activateLight(actor, source, pattern) {
+  if ( source.consume && !source.freeForAll ) {
+    const item = findMatchingItems(actor, source)[0];
+    if ( !item ) {
+      ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Hud.NoItem", { name: actor.name, item: source.name }));
+      return;
+    }
+    // Only decrement when a quantity path is configured and resolves to a
+    // number; otherwise the item has no tracked quantity to spend.
+    const quantityPath = getQuantityPath();
+    const quantity = getItemQuantity(item);
+    if ( quantityPath && Number.isFinite(quantity) ) {
+      await Item.implementation.updateDocuments([{ _id: item.id, [quantityPath]: quantity - 1 }], { parent: actor });
+    }
+  }
+
+  // Only one light effect at a time: remove any previous one (switching sources / re-lighting).
+  const stale = actor.effects.filter(e => e.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT)).map(e => e.id);
+  if ( stale.length ) await actor.deleteEmbeddedDocuments("ActiveEffect", stale);
+
+  const mode = source.durationMode === DURATION_MODES.REAL ? DURATION_MODES.REAL : DURATION_MODES.WORLD;
+  const minutes = source.durationMinutes > 0 ? source.durationMinutes : 0;
+  const worldExpiry = (mode === DURATION_MODES.WORLD) && minutes;
+
+  // World-time lights use the effect's native duration so the light reverts the
+  // instant the game clock passes the expiry, on every client. Real-time lights
+  // keep an indefinite native duration (advancing the clock must not affect them)
+  // and are extinguished by the real-time ticker. `expiry: null` makes the native
+  // duration expire purely on elapsed time rather than on a combat turn boundary.
+  const duration = worldExpiry ? { value: minutes, units: "minutes", expiry: null } : { value: null };
+  const flagValue = {
+    sourceId: source.id,
+    patternId: pattern.id,
+    patternName: pattern.name,
+    itemName: source.name,
+    mode,
+    expiresAtWorld: worldExpiry ? game.time.worldTime + (minutes * 60) : null,
+    expiresAtReal: (mode === DURATION_MODES.REAL) && minutes ? Date.now() + (minutes * 60000) : null
+  };
+
+  // This effect is system-agnostic: every piece below is core Foundry v14, not
+  // system-specific. `token.light.*` is native token-targeting (core strips
+  // the `token.` prefix and applies it to the TokenDocument); `type: "base"` is
+  // CONST.BASE_DOCUMENT_TYPE, for which core itself registers the data model
+  // (CONFIG.ActiveEffect.dataModels.base = ActiveEffectTypeDataModel) defining
+  // `system.changes`. The change shape validates on a vanilla-core world and on
+  // any system that doesn't hostilely narrow the base changes schema (some
+  // systems reshape it but keep the same shape + the `override` mode).
+  await actor.createEmbeddedDocuments("ActiveEffect", [{
+    name: source.name,
+    img: source.img,
+    type: "base",
+    transfer: false,
+    duration,
+    system: { changes: buildLightChanges(pattern) },
+    flags: { [MODULE_ID]: { [FLAGS.EFFECT_LIGHT]: flagValue } }
+  }]);
+}
+
+/**
+ * Drop a light source as a standalone AmbientLight on the scene: the light is
+ * placed on the ground rather than lit on the token. One matching item is consumed
+ * (a dropped light is the physical item left behind, so it is spent regardless of
+ * the source's consume-on-use setting; free-for-all sources have no item and never
+ * expose the drop control), and the token's current module light — if any — is
+ * extinguished, since that light is now the one lying on the ground. Re-lighting is
+ * a deliberate, manual action afterwards. The light is placed at the token's center
+ * using the given pattern's light data.
+ * @param {Actor} actor The actor dropping the light.
+ * @param {object} source The registered light source definition (never a free-for-all source here).
+ * @param {object} pattern The light pattern ({id, name, light}) whose light data is placed.
+ * @param {foundry.canvas.placeables.Token} token The token placeable the drop originates from.
+ * @returns {Promise<void>}
+ */
+export async function dropLight(actor, source, pattern, token) {
+  const item = findMatchingItems(actor, source)[0];
+  if ( !item ) {
+    ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Hud.NoItem", { name: actor.name, item: source.name }));
+    return;
+  }
+
+  // Only decrement when a quantity path is configured and resolves to a number;
+  // otherwise the item has no tracked quantity to spend (mirrors activateLight).
+  const quantityPath = getQuantityPath();
+  const quantity = getItemQuantity(item);
+  if ( quantityPath && Number.isFinite(quantity) ) {
+    await Item.implementation.updateDocuments([{ _id: item.id, [quantityPath]: quantity - 1 }], { parent: actor });
+  }
+
+  // The dropped light leaves the token, so extinguish whatever this module has lit
+  // on it (no-op when nothing is lit).
+  await deactivateLight(actor);
+
+  // AmbientLight documents anchor on their center point, so drop the light at the
+  // token's center rather than its top-left origin (token.x / token.y).
+  const { x, y } = token.center;
+  await placeAmbientLight(canvas.scene?.id, { x, y, config: buildLightData(pattern) });
+  ui.notifications.info(game.i18n.format("LIGHTSOURCES.Hud.Dropped", { name: actor.name, item: source.name }));
+}
+
+/**
+ * Place an AmbientLight on a scene, delegating to the active GM when the current
+ * user lacks permission. Foundry only lets a GM create AmbientLight documents, so
+ * a non-GM caller hands the request off over the module socket.
+ * @param {string} sceneId The id of the scene to place the light on.
+ * @param {object} lightData The AmbientLight creation data ({x, y, config}).
+ * @returns {Promise<void>}
+ */
+async function placeAmbientLight(sceneId, lightData) {
+  if ( !sceneId ) return;
+  if ( game.user.isGM ) {
+    await createAmbientLight(sceneId, lightData);
+    return;
+  }
+  if ( !game.users.activeGM ) {
+    ui.notifications.warn(game.i18n.localize("LIGHTSOURCES.Hud.NoGm"));
+    return;
+  }
+  game.socket.emit(`module.${MODULE_ID}`, { action: "dropLight", sceneId, lightData });
+}
+
+/**
+ * Create the AmbientLight document. Runs on a GM client — directly for a GM user,
+ * or on the active GM after a socket relay from a player.
+ * @param {string} sceneId The id of the scene to place the light on.
+ * @param {object} lightData The AmbientLight creation data ({x, y, config}).
+ * @returns {Promise<void>}
+ */
+async function createAmbientLight(sceneId, lightData) {
+  const scene = game.scenes.get(sceneId);
+  if ( !scene ) return;
+  await scene.createEmbeddedDocuments("AmbientLight", [lightData]);
+}
+
+/**
+ * Handle an inbound module socket message. Only the active GM acts on it, so a
+ * relayed request runs exactly once even when several GMs are connected.
+ * Registered on the module socket from the `ready` hook.
+ * @param {object} payload The socket payload ({action, ...}).
+ * @returns {void}
+ */
+export function handleSocketMessage(payload) {
+  if ( !payload || (game.users.activeGM !== game.user) ) return;
+  if ( payload.action === "dropLight" ) {
+    createAmbientLight(payload.sceneId, payload.lightData)
+      .catch(err => console.error(`${MODULE_ID} | Drop light relay failed`, err));
+  }
+}
+
+/**
+ * Deactivate the active light on a single Actor by deleting its light effect,
+ * reverting the token to its original light automatically.
+ * @param {Actor} actor The actor whose light is extinguished.
+ * @returns {Promise<void>}
+ */
+export async function deactivateLight(actor) {
+  return deactivateLights([actor]);
+}
+
+/**
+ * Deactivate the active light on several Actors, deleting each one's light
+ * effect. Deletion is per-actor because ActiveEffects are embedded documents
+ * with distinct parents.
+ * @param {Actor[]} actors The actors whose lights are extinguished.
+ * @returns {Promise<void>}
+ */
+export async function deactivateLights(actors) {
+  for ( const actor of actors ) {
+    const ids = actor.effects.filter(e => e.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT)).map(e => e.id);
+    if ( ids.length ) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+  }
+}
+
+/**
+ * Collect this module's expired light effects on a single Actor.
+ * A world-time light is expired once the game clock passes its stored
+ * `expiresAtWorld`; a real-time light once wall-clock time passes `expiresAtReal`.
+ * @param {Actor} actor The actor to inspect.
+ * @param {number} now The current `Date.now()` timestamp.
+ * @returns {Array<{actor: Actor, id: string, itemName: string}>} The expired entries.
+ */
+function collectExpired(actor, now) {
+  const expired = [];
+  for ( const effect of actor.effects ) {
+    const flag = effect.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT);
+    if ( !flag ) continue;
+    const isExpired = flag.mode === DURATION_MODES.REAL
+      ? (flag.expiresAtReal != null) && (flag.expiresAtReal <= now)
+      : (flag.expiresAtWorld != null) && (game.time.worldTime >= flag.expiresAtWorld);
+    if ( isExpired ) expired.push({ actor, id: effect.id, itemName: flag.itemName });
+  }
+  return expired;
+}
+
+/**
+ * Find every actor whose light has burned out and extinguish it. Runs only on
+ * the active GM client, so it works regardless of whether the owning player is
+ * connected. Triggered both by the real-time ticker (for real-time lights) and
+ * by the `updateWorldTime` hook (for in-game-time lights). Expired lights are
+ * deleted and announced in chat; they are never re-lit or re-consumed.
+ * @returns {Promise<void>}
+ */
+export async function sweepExpiredLights() {
+  if ( game.users.activeGM !== game.user ) return;
+  const now = Date.now();
+  const expired = [];
+
+  for ( const actor of game.actors ) expired.push(...collectExpired(actor, now));
+
+  // Unlinked tokens keep their effect on a synthetic actor, not in game.actors.
+  for ( const scene of game.scenes ) {
+    for ( const token of scene.tokens ) {
+      if ( token.actorLink || !token.actor ) continue;
+      expired.push(...collectExpired(token.actor, now));
+    }
+  }
+
+  if ( !expired.length ) return;
+
+  // Group deletions per actor (embedded documents have distinct parents).
+  const byActor = new Map();
+  for ( const { actor, id } of expired ) {
+    if ( !byActor.has(actor) ) byActor.set(actor, []);
+    byActor.get(actor).push(id);
+  }
+  for ( const [actor, ids] of byActor ) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+
+  await ChatMessage.implementation.createDocuments(expired.map(({ actor, itemName }) => ({
+    content: buildChatCard(
+      game.i18n.localize("LIGHTSOURCES.Chat.ExpiredTitle"),
+      `<p style="color: #fff; margin: 0;">${game.i18n.format("LIGHTSOURCES.Chat.Expired", { actor: actor.name, item: itemName })}</p>`
+    ),
+    speaker: ChatMessage.implementation.getSpeaker({ actor })
+  })));
+}
+
+/**
+ * Start the periodic real-time expiry check. Called once from the `ready` hook;
+ * the check itself no-ops on every client except the active GM. In-game-time
+ * lights are handled separately through the `updateWorldTime` hook.
+ * @returns {void}
+ */
+export function startExpiryTicker() {
+  if ( tickerId !== null ) return;
+  const tick = () => sweepExpiredLights().catch(err => console.error(`${MODULE_ID} | Expiry check failed`, err));
+  tickerId = window.setInterval(tick, EXPIRY_CHECK_INTERVAL_MS);
+  tick(); // Catch lights that expired while no GM was connected.
+}

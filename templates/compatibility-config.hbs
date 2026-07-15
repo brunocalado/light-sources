@@ -1,0 +1,67 @@
+<div class="ls-compatibility-main">
+<p class="ls-system-note">{{localize "LIGHTSOURCES.Compat.SystemNote" system=systemTitle id=systemId}}</p>
+
+<nav class="sheet-tabs tabs" data-group="primary">
+  {{#each tabs}}
+  <a class="{{this.cssClass}}" data-action="tab" data-group="{{this.group}}" data-tab="{{this.id}}">
+    <i class="{{this.icon}}" inert></i>
+    <span>{{localize this.label}}</span>
+  </a>
+  {{/each}}
+</nav>
+
+<section class="tab {{tabs.items.cssClass}}" data-group="primary" data-tab="items">
+  <p class="hint">{{localize "LIGHTSOURCES.Compat.ItemsHint"}}</p>
+  {{#if itemTypes.length}}
+  <ul class="ls-type-list">
+    {{#each itemTypes}}
+    <li class="ls-type">
+      <label>
+        <input type="checkbox" name="items.{{this.value}}" {{checked this.checked}}>
+        <span class="ls-type-label">{{this.label}}</span>
+        <code class="ls-type-id">{{this.value}}</code>
+      </label>
+    </li>
+    {{/each}}
+  </ul>
+  {{else}}
+  <p class="ls-empty">{{localize "LIGHTSOURCES.Compat.NoItemTypes"}}</p>
+  {{/if}}
+</section>
+
+<section class="tab {{tabs.actors.cssClass}}" data-group="primary" data-tab="actors">
+  <p class="hint">{{localize "LIGHTSOURCES.Compat.ActorsHint"}}</p>
+  {{#if actorTypes.length}}
+  <ul class="ls-type-list">
+    {{#each actorTypes}}
+    <li class="ls-type">
+      <label>
+        <input type="checkbox" name="actors.{{this.value}}" {{checked this.checked}}>
+        <span class="ls-type-label">{{this.label}}</span>
+        <code class="ls-type-id">{{this.value}}</code>
+      </label>
+    </li>
+    {{/each}}
+  </ul>
+  {{else}}
+  <p class="ls-empty">{{localize "LIGHTSOURCES.Compat.NoActorTypes"}}</p>
+  {{/if}}
+</section>
+
+<section class="tab {{tabs.quantity.cssClass}}" data-group="primary" data-tab="quantity">
+  <div class="form-group">
+    <label>{{localize "LIGHTSOURCES.Compat.QuantityPath"}}</label>
+    <div class="form-fields">
+      <input type="text" name="quantityPath" value="{{quantityPath}}" placeholder="system.quantity" spellcheck="false" autocapitalize="off" autocomplete="off">
+    </div>
+    <p class="hint">{{localize "LIGHTSOURCES.Compat.QuantityHint"}}</p>
+  </div>
+</section>
+
+<footer class="form-footer">
+  <button type="submit">
+    <i class="fa-solid fa-floppy-disk" inert></i>
+    <span>{{localize "LIGHTSOURCES.Compat.Save"}}</span>
+  </button>
+</footer>
+</div>

@@ -1,0 +1,124 @@
+/*!
+ * Light Sources
+ * Copyright (c) 2026 https://github.com/brunocalado
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3.
+ */
+
+.light-sources.ls-light-editor {
+  /* Core renders an empty/broken controls-dropdown menu whenever an app
+   * defines no header controls (foundryvtt/foundryvtt#11229); this app never
+   * populates one, so the toggle button and menu are just dead space. */
+  .window-header {
+    [data-action="toggleControls"],
+    menu.controls-dropdown {
+      display: none;
+    }
+  }
+
+  .window-content {
+    padding-block-start: 0.25rem;
+  }
+
+  /* Guarantee tab visibility toggling regardless of the host theme. */
+  .tab {
+    display: none;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+  }
+
+  .tab.active {
+    display: flex;
+  }
+
+  .sheet-tabs {
+    margin: 0 0 0.5rem;
+    border-bottom: 1px solid var(--color-border, #7a7971);
+
+    a {
+      white-space: nowrap;
+    }
+  }
+
+  .ls-value-field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    input[type="number"] {
+      flex: 1;
+      min-width: 0;
+    }
+
+    select {
+      flex: none;
+      width: auto;
+    }
+  }
+
+  /* Scroll the pattern stack rather than let the auto-height window grow past
+   * the viewport once a source gains several patterns. The extra inline
+   * padding keeps each card's shadow from being clipped by the scroll box. */
+  .ls-pattern-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    max-height: 60vh;
+    padding: 0.125rem;
+    overflow-y: auto;
+  }
+
+  /* A distinct panel per pattern (background + border + shadow) so adjacent
+   * patterns read as separate blocks rather than one continuous form. */
+  .ls-pattern-card {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--color-border, #7a7971);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+
+  .ls-pattern-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--color-border, #7a7971);
+
+    .ls-pattern-name {
+      flex: 1;
+      min-width: 0;
+      font-weight: bold;
+    }
+
+    .ls-pattern-remove {
+      flex: none;
+      width: var(--input-height, 1.75rem);
+      color: var(--color-text-secondary, #c0c0b0);
+    }
+  }
+
+  .ls-pattern-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem 0.75rem;
+
+    hr {
+      width: 100%;
+      margin: 0.25rem 0;
+      opacity: 0.5;
+    }
+  }
+
+  .ls-pattern-add {
+    margin-top: 0.5rem;
+  }
+}

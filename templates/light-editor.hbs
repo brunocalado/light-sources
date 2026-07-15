@@ -1,0 +1,153 @@
+<div class="ls-light-editor-main">
+<nav class="sheet-tabs tabs" data-group="primary">
+  {{#each tabs}}
+  <a class="{{this.cssClass}}" data-action="tab" data-group="{{this.group}}" data-tab="{{this.id}}">
+    <i class="{{this.icon}}" inert></i>
+    <span>{{localize this.label}}</span>
+  </a>
+  {{/each}}
+</nav>
+
+<section class="tab {{tabs.patterns.cssClass}}" data-group="primary" data-tab="patterns">
+  <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.PatternsHint"}}</p>
+  <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.PreviewHint"}}</p>
+  <div class="ls-pattern-list">
+    {{#each patterns}}
+    <fieldset class="ls-pattern-card" data-pattern-index="{{this.index}}">
+      <div class="ls-pattern-head">
+        <input type="hidden" name="patterns.{{this.index}}.id" value="{{this.id}}">
+        <input type="text" class="ls-pattern-name" name="patterns.{{this.index}}.name"
+               value="{{this.name}}" placeholder="{{localize 'LIGHTSOURCES.Patterns.NamePlaceholder'}}"
+               aria-label="{{localize 'LIGHTSOURCES.Patterns.NamePlaceholder'}}">
+        {{#if ../canRemove}}
+        <button type="button" class="ls-pattern-remove" data-action="removePattern" data-pattern-index="{{this.index}}"
+                data-tooltip="{{localize 'LIGHTSOURCES.Patterns.Remove'}}" aria-label="{{localize 'LIGHTSOURCES.Patterns.Remove'}}">
+          <i class="fa-solid fa-trash" inert></i>
+        </button>
+        {{/if}}
+      </div>
+
+      <div class="ls-pattern-body">
+        <div class="form-group">
+          <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Dim"}}</label>
+          <div class="form-fields ls-value-field">
+            <input type="number" name="patterns.{{this.index}}.light.dim" value="{{this.light.dim}}" min="0" step="0.5">
+            <select class="ls-value-preset" data-target="patterns.{{this.index}}.light.dim" aria-label="{{localize 'LIGHTSOURCES.LightEditor.Fields.RangePreset'}}">
+              {{#each this.dimPresets}}
+              <option value="{{this.value}}"{{#if this.selected}} selected{{/if}}>{{this.label}}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Bright"}}</label>
+          <div class="form-fields ls-value-field">
+            <input type="number" name="patterns.{{this.index}}.light.bright" value="{{this.light.bright}}" min="0" step="0.5">
+            <select class="ls-value-preset" data-target="patterns.{{this.index}}.light.bright" aria-label="{{localize 'LIGHTSOURCES.LightEditor.Fields.RangePreset'}}">
+              {{#each this.brightPresets}}
+              <option value="{{this.value}}"{{#if this.selected}} selected{{/if}}>{{this.label}}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Angle"}}</label>
+          <div class="form-fields">
+            <range-picker name="patterns.{{this.index}}.light.angle" value="{{this.light.angle}}" min="5" max="360" step="5"></range-picker>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Color"}}</label>
+          <div class="form-fields">
+            <color-picker name="patterns.{{this.index}}.light.color" value="{{this.light.color}}"></color-picker>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Alpha"}}</label>
+          <div class="form-fields">
+            <range-picker name="patterns.{{this.index}}.light.alpha" value="{{this.light.alpha}}" min="0" max="1" step="0.05"></range-picker>
+          </div>
+        </div>
+
+        <hr>
+
+        <div class="form-group">
+          <label>{{localize "LIGHTSOURCES.LightEditor.Fields.AnimationType"}}</label>
+          <div class="form-fields">
+            <select name="patterns.{{this.index}}.light.animation.type">
+              <option value="">{{localize "LIGHTSOURCES.LightEditor.Fields.AnimationNone"}}</option>
+              {{#each this.animationTypes}}
+              <option value="{{this.value}}"{{#if this.selected}} selected{{/if}}>{{this.label}}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Speed"}}</label>
+          <div class="form-fields">
+            <range-picker name="patterns.{{this.index}}.light.animation.speed" value="{{this.light.animation.speed}}" min="1" max="10" step="1"></range-picker>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Intensity"}}</label>
+          <div class="form-fields">
+            <range-picker name="patterns.{{this.index}}.light.animation.intensity" value="{{this.light.animation.intensity}}" min="1" max="10" step="1"></range-picker>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Reverse"}}</label>
+          <div class="form-fields">
+            <input type="checkbox" name="patterns.{{this.index}}.light.animation.reverse" {{checked this.light.animation.reverse}}>
+          </div>
+        </div>
+      </div>
+    </fieldset>
+    {{/each}}
+  </div>
+
+  <button type="button" class="ls-pattern-add" data-action="addPattern">
+    <i class="fa-solid fa-plus" inert></i>
+    <span>{{localize "LIGHTSOURCES.Patterns.Add"}}</span>
+  </button>
+</section>
+
+<section class="tab {{tabs.usage.cssClass}}" data-group="primary" data-tab="usage">
+  <div class="form-group">
+    <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Consume"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="consume" {{checked source.consume}}>
+    </div>
+    <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.ConsumeHint"}}</p>
+  </div>
+  <div class="form-group">
+    <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Duration"}}</label>
+    <div class="form-fields ls-value-field">
+      <input type="number" name="durationMinutes" value="{{source.durationMinutes}}" min="0" step="1">
+      <select class="ls-value-preset" data-target="durationMinutes" aria-label="{{localize 'LIGHTSOURCES.LightEditor.Fields.DurationPreset'}}">
+        {{#each durationPresets}}
+        <option value="{{this.value}}"{{#if this.selected}} selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+    <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.DurationHint"}}</p>
+  </div>
+  <div class="form-group">
+    <label>{{localize "LIGHTSOURCES.LightEditor.Fields.DurationMode"}}</label>
+    <div class="form-fields">
+      <select name="durationMode">
+        {{#each durationModes}}
+        <option value="{{this.value}}"{{#if this.selected}} selected{{/if}}>{{localize this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+    <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.DurationModeHint"}}</p>
+  </div>
+</section>
+
+<footer class="form-footer">
+  <button type="submit">
+    <i class="fa-solid fa-floppy-disk" inert></i>
+    <span>{{localize "LIGHTSOURCES.LightEditor.Save"}}</span>
+  </button>
+</footer>
+</div>

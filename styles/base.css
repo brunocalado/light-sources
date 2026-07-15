@@ -1,0 +1,77 @@
+/*!
+ * Light Sources
+ * Copyright (c) 2026 https://github.com/brunocalado
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3.
+ */
+
+.light-sources {
+  --light-sources-accent: #ff9838;
+  --ls-toggle-width: 2.6rem;
+  --ls-toggle-height: 1.5rem;
+  --ls-toggle-inset: 0.125rem;
+
+  /*
+   * Apple-style toggle switch, applied to every checkbox in the module.
+   * `!important` on the reset properties is required: Foundry core's own
+   * checkbox skin (foundry2.css, layer elements.forms) applies with higher
+   * precedence, otherwise rendering its native check/border/background on
+   * top of this custom toggle. Its checkmark glyph lives on ::after (ours
+   * only redefines ::before for the sliding thumb), so ::after must be
+   * cleared separately or the native check icon still shows through.
+   */
+  input[type="checkbox"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    position: relative;
+    width: var(--ls-toggle-width) !important;
+    height: var(--ls-toggle-height) !important;
+    margin: 0;
+    padding: 0;
+    border: none !important;
+    border-radius: calc(var(--ls-toggle-height) / 2);
+    background: var(--color-border, #7a7971) !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    vertical-align: middle;
+    flex: none;
+    transition: background-color 0.2s ease;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: var(--ls-toggle-inset);
+      left: var(--ls-toggle-inset);
+      width: calc(var(--ls-toggle-height) - (var(--ls-toggle-inset) * 2));
+      height: calc(var(--ls-toggle-height) - (var(--ls-toggle-inset) * 2));
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+      transition: transform 0.2s ease;
+    }
+
+    &::after {
+      content: none !important;
+    }
+
+    &:checked {
+      background: var(--light-sources-accent) !important;
+    }
+
+    &:checked::before {
+      transform: translateX(calc(var(--ls-toggle-width) - var(--ls-toggle-height)));
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--light-sources-accent);
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}

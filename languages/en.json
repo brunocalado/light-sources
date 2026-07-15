@@ -1,0 +1,107 @@
+{
+  "LIGHTSOURCES": {
+    "Settings": {
+      "Menu": {
+        "Name": "Light Sources",
+        "Label": "Configure Light Sources",
+        "Hint": "Register items as light sources and configure their light pattern, consumption and duration. GM only."
+      },
+      "Compat": {
+        "Name": "System Compatibility",
+        "Label": "Configure System Compatibility",
+        "Hint": "Choose which of the detected system's item and actor types this module uses, and where an item's quantity is stored. GM only."
+      }
+    },
+    "Config": {
+      "Title": "Light Sources",
+      "DropHint": "Drag an item of an enabled type here to register it as a light source.",
+      "Empty": "No light sources registered yet.",
+      "OpenItem": "Open Item",
+      "SendToChat": "Send to Chat",
+      "NoItemReference": "No linked Item found. Re-drag this light source to enable this action.",
+      "Grant": "Free for All (No Item Required)",
+      "Edit": "Edit Light Pattern",
+      "Delete": "Remove Light Source",
+      "DeleteTitle": "Remove Light Source",
+      "DeleteContent": "Remove <strong>{name}</strong> from the registered light sources?",
+      "InvalidType": "This item's type is not enabled as a light source. Enable it in System Compatibility first.",
+      "Duplicate": "{name} is already registered as a light source.",
+      "Unlimited": "Unlimited",
+      "Minutes": "{minutes} min",
+      "Patterns": "{count} patterns",
+      "Consumed": "Consumed on use",
+      "FreeForAll": "Free for all",
+      "ManagedByTooltip": "Registered by an external system or module."
+    },
+    "Patterns": {
+      "Standard": "Standard",
+      "New": "New Pattern",
+      "NamePlaceholder": "Pattern name",
+      "Add": "Add Pattern",
+      "Remove": "Remove Pattern"
+    },
+    "Compat": {
+      "Title": "System Compatibility",
+      "SystemNote": "Detected system: {system} ({id}). Enable the types this module should treat as light sources and the actors that can carry them.",
+      "Tabs": {
+        "items": "Item Types",
+        "actors": "Actor Types",
+        "quantity": "Quantity"
+      },
+      "ItemsHint": "Enable the item types that may be registered as light sources.",
+      "ActorsHint": "Enable the actor types whose tokens show the light-source control on the Token HUD.",
+      "NoItemTypes": "The active system defines no item types.",
+      "NoActorTypes": "The active system defines no actor types.",
+      "QuantityPath": "Item Quantity Path",
+      "QuantityHint": "Dotted path to an item's quantity, from the item root (for example: system.quantity). Used to check availability and to subtract one when a light is consumed. Leave empty if the system's items have no quantity — consumable light sources will then never reduce a count.",
+      "Save": "Save"
+    },
+    "LightEditor": {
+      "Title": "Light Pattern: {name}",
+      "Tabs": {
+        "patterns": "Patterns",
+        "usage": "Consumption"
+      },
+      "Fields": {
+        "PatternsHint": "Each pattern is a way this light can be lit — for example a wide, short-range beam versus a narrow, long-range one. The actor picks a pattern from the Token HUD. Consumption and duration are shared across every pattern.",
+        "PreviewHint": "Select a token on the canvas to preview these settings on it live as you edit. The token's light is restored automatically when you close this window.",
+        "Dim": "Dim Radius",
+        "Bright": "Bright Radius",
+        "Angle": "Emission Angle",
+        "Color": "Light Color",
+        "Alpha": "Color Intensity",
+        "AnimationType": "Animation Type",
+        "AnimationNone": "None",
+        "Speed": "Animation Speed",
+        "Intensity": "Animation Intensity",
+        "Reverse": "Reverse Direction",
+        "Consume": "Consume on Use",
+        "ConsumeHint": "When enabled, activating this light reduces the item quantity by 1. The item stays in the inventory even at zero quantity, but is no longer available to light. The light is never re-consumed automatically.",
+        "Duration": "Duration (minutes)",
+        "DurationHint": "Minutes before the light goes out on its own (counted in the mode chosen below). Use 0 for an unlimited light that only goes out when extinguished manually.",
+        "DurationPreset": "Duration Preset",
+        "DurationMode": "Duration Counts In",
+        "DurationModeWorld": "In-game time (world clock)",
+        "DurationModeReal": "Real time (wall clock)",
+        "DurationModeHint": "In-game time: the light burns down as the GM advances the world clock, and stays lit while the clock is still. Real time: the light burns down in real-world minutes even while the game is paused or the owner is offline.",
+        "RangePreset": "Range Preset",
+        "RangeCustom": "Custom"
+      },
+      "Save": "Save"
+    },
+    "Hud": {
+      "Tooltip": "Light Sources",
+      "Extinguish": "Extinguish Light",
+      "Drop": "Drop",
+      "DropTooltip": "Drop this light on the ground as an Ambient Light",
+      "Dropped": "{name} drops {item} as a light on the ground.",
+      "NoGm": "No GM is connected to place the light. Ask a GM to log in and try again.",
+      "NoItem": "{name} no longer carries {item}."
+    },
+    "Chat": {
+      "ExpiredTitle": "Light Burns Out",
+      "Expired": "The {item} carried by {actor} burns out.",
+      "DragHint": "Drag onto an Actor sheet to add it to their inventory."
+    }
+  }
+}
