@@ -107,6 +107,23 @@ Install via the Foundry VTT Module browser or use this manifest link:
 https://raw.githubusercontent.com/brunocalado/light-sources/refs/heads/main/module.json
 ```
 
+## 🌍 Translations
+
+Want to translate this module? It's easy:
+1. Download the `languages/en.json` file.
+2. Translate the values in the JSON file.
+3. Open an issue on [GitHub](https://github.com/brunocalado/light-sources/issues).
+4. Attach your translated file and tell us the `lang` and `name` it should use. For example:
+   ```json
+   "lang": "en",
+   "name": "English"
+   ```
+   or
+   ```json
+   "lang": "pt-BR",
+   "name": "Portuguese (Brasil)"
+   ```
+
 ## ⚖️ Credits
 
 * **Code License:** GNU GPLv3.
