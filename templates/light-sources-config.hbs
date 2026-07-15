@@ -1,4 +1,12 @@
 <div class="ls-config-main">
+  <div class="ls-toolbar">
+    <span class="ls-toolbar-label">{{localize "LIGHTSOURCES.Config.Title"}}</span>
+    <button type="button" data-action="addByName">
+      <i class="fa-solid fa-plus" inert></i>
+      {{localize "LIGHTSOURCES.Config.AddByName"}}
+    </button>
+  </div>
+
   <div class="ls-drop-hint">
     <i class="fa-solid fa-download" inert></i>
     <p>{{localize "LIGHTSOURCES.Config.DropHint"}}</p>
@@ -12,7 +20,7 @@
       <div class="ls-info">
         <span class="ls-name">{{this.name}}</span>
         <span class="ls-meta">
-          {{this.typeLabel}} &middot; {{this.durationLabel}}{{#if this.patternLabel}} &middot; {{this.patternLabel}}{{/if}}{{#if this.consume}} &middot; {{localize "LIGHTSOURCES.Config.Consumed"}}{{/if}}{{#if this.freeForAll}} &middot; {{localize "LIGHTSOURCES.Config.FreeForAll"}}{{/if}}
+          {{#if this.typeLabel}}{{this.typeLabel}} &middot; {{/if}}{{this.durationLabel}}{{#if this.patternLabel}} &middot; {{this.patternLabel}}{{/if}}{{#if this.consume}} &middot; {{localize "LIGHTSOURCES.Config.Consumed"}}{{/if}}{{#if this.freeForAll}} &middot; {{localize "LIGHTSOURCES.Config.FreeForAll"}}{{/if}}
         </span>
       </div>
       {{#if this.managedBy}}
@@ -20,7 +28,13 @@
         <i class="fa-solid fa-plug" inert></i>
       </span>
       {{/if}}
+      {{#unless this.uuid}}
+      <span class="ls-name-only-badge" data-tooltip="{{localize 'LIGHTSOURCES.Config.NameOnlyTooltip'}}">
+        {{localize "LIGHTSOURCES.Config.NameOnlyBadge"}}
+      </span>
+      {{/unless}}
       <div class="ls-controls">
+        {{#if this.uuid}}
         <button type="button" data-action="openItem" data-tooltip="{{localize 'LIGHTSOURCES.Config.OpenItem'}}"
                 aria-label="{{localize 'LIGHTSOURCES.Config.OpenItem'}}">
           <i class="fa-solid fa-book-open" inert></i>
@@ -29,6 +43,7 @@
                 aria-label="{{localize 'LIGHTSOURCES.Config.SendToChat'}}">
           <i class="fa-solid fa-comment" inert></i>
         </button>
+        {{/if}}
         <button type="button" data-action="toggleFreeForAll" class="ls-toggle-free{{#if this.freeForAll}} ls-active{{/if}}"
                 data-tooltip="{{localize 'LIGHTSOURCES.Config.Grant'}}" aria-label="{{localize 'LIGHTSOURCES.Config.Grant'}}"
                 aria-pressed="{{this.freeForAll}}">

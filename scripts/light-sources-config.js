@@ -6,7 +6,7 @@
  * it under the terms of the GNU General Public License version 3.
  */
 
-import { MODULE_ID, TEMPLATES, DEFAULT_LIGHT, DURATION_MODES, CHAT_CARD_ACCENT } from "./constants.js";
+import { MODULE_ID, TEMPLATES, DEFAULT_LIGHT, DEFAULT_SOURCE_IMG, DURATION_MODES, CHAT_CARD_ACCENT } from "./constants.js";
 import { getSources, setSources, makePattern, buildChatCard, getItemTypes } from "./helpers.js";
 import { LightSourceEditor } from "./light-editor.js";
 
@@ -32,6 +32,7 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
     },
     position: { width: 520, height: "auto" },
     actions: {
+      addByName: this.prototype._onAddByName,
       openItem: this.prototype._onOpenItem,
       sendToChat: this.prototype._onSendToChat,
       toggleFreeForAll: this.prototype._onToggleFreeForAll,
@@ -41,7 +42,10 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
   };
 
   static PARTS = {
-    main: { template: TEMPLATES.CONFIG }
+    // `scrollable` preserves the source list's scroll position across the
+    // re-renders triggered by every action in this window (toggling free-for-all,
+    // adding/removing a source, ...), instead of resetting it to the top.
+    main: { template: TEMPLATES.CONFIG, scrollable: [".ls-source-list"] }
   };
 
   /**
@@ -54,7 +58,8 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
     const context = await super._prepareContext(options);
     context.sources = getSources().map(source => ({
       ...source,
-      typeLabel: game.i18n.localize(CONFIG.Item.typeLabels?.[source.type] ?? source.type),
+      // Null for a name-only source (no linked Item, so no document subtype).
+      typeLabel: source.type ? game.i18n.localize(CONFIG.Item.typeLabels?.[source.type] ?? source.type) : null,
       durationLabel: source.durationMinutes > 0
         ? game.i18n.format("LIGHTSOURCES.Config.Minutes", { minutes: source.durationMinutes })
         : game.i18n.localize("LIGHTSOURCES.Config.Unlimited"),
@@ -119,6 +124,57 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
       name: item.name,
       img: item.img,
       type: item.type,
+      consume: false,
+      freeForAll: false,
+      durationMode: DURATION_MODES.WORLD,
+      durationMinutes: 0,
+      patterns: [makePattern(DEFAULT_LIGHT, game.i18n.localize("LIGHTSOURCES.Patterns.Standard"))]
+    });
+    await setSources(sources);
+    this.render();
+  }
+
+  /**
+   * Register a new light source from a name alone, with no linked Item: the
+   * GM is prompted for a name, and the source is created with a default icon
+   * and no `type`/`uuid`. Meant for "free for all" grants with no physical
+   * item, or for sources the GM wants to register before the item exists.
+   * Declared in DEFAULT_OPTIONS.actions.
+   * @param {PointerEvent} event The originating click event.
+   * @param {HTMLElement} target The element bearing the data-action.
+   * @returns {Promise<void>}
+   */
+  async _onAddByName(event, target) {
+    const content = `
+      <div class="form-group">
+        <label>${game.i18n.localize("LIGHTSOURCES.Config.NameLabel")}</label>
+        <div class="form-fields">
+          <input type="text" name="name" required autofocus
+                 placeholder="${game.i18n.localize("LIGHTSOURCES.Config.NamePlaceholder")}">
+        </div>
+      </div>`;
+    const name = await DialogV2.prompt({
+      window: { title: "LIGHTSOURCES.Config.AddByNameTitle" },
+      content,
+      ok: {
+        label: "LIGHTSOURCES.Config.AddByName",
+        callback: (event, button) => button.form.elements.name.value.trim()
+      }
+    });
+    if ( !name ) return;
+
+    const sources = getSources();
+    if ( sources.some(s => s.name === name) ) {
+      ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Config.Duplicate", { name }));
+      return;
+    }
+
+    sources.push({
+      id: foundry.utils.randomID(),
+      uuid: null,
+      name,
+      img: DEFAULT_SOURCE_IMG,
+      type: null,
       consume: false,
       freeForAll: false,
       durationMode: DURATION_MODES.WORLD,

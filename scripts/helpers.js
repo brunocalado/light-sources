@@ -99,22 +99,39 @@ export function listDocumentTypes(documentName) {
 }
 
 /**
- * Find the items in an Actor's inventory matching a registered light source.
- * Inventory items are copies of the world/compendium item, so matching is done
- * by name + type rather than by id. Items whose quantity has been consumed
+ * Find the items in an Actor's inventory matching a registered light source,
+ * using a two-tier strategy. When the source has a `uuid` (it was registered
+ * by dragging a real Item), items are first matched by `flags.core.sourceId`
+ * — the origin UUID core stamps on an embedded item copy — so a source keeps
+ * matching even after the player renames the item on their sheet. If that
+ * yields nothing (the flag is missing/stripped, or the source has no `uuid`
+ * at all because it was registered by name only), matching falls back to name
+ * (and, when the source has a `type`, that type too — a name-only source has
+ * no type and matches by name alone). Items whose quantity has been consumed
  * down to 0 are excluded: they are kept in the inventory rather than deleted,
  * but stop being available for consumption or display in the Token HUD. Items
  * whose quantity cannot be determined (no quantity path configured) are always
  * treated as available.
  * @param {Actor} actor The actor whose inventory is searched.
- * @param {object} source A light source definition ({name, type, ...}).
+ * @param {object} source A light source definition ({name, type, uuid, ...}).
+ *   `type` and `uuid` may be null/absent for a source registered by name only.
  * @returns {Item[]} The matching embedded Items with quantity remaining.
  */
 export function findMatchingItems(actor, source) {
-  return actor.items.filter(i => {
-    if ( (i.name !== source.name) || (i.type !== source.type) ) return false;
-    const quantity = getItemQuantity(i);
+  const available = item => {
+    const quantity = getItemQuantity(item);
     return !Number.isFinite(quantity) || (quantity > 0);
+  };
+
+  if ( source.uuid ) {
+    const bySourceId = actor.items.filter(i => (i.getFlag("core", "sourceId") === source.uuid) && available(i));
+    if ( bySourceId.length ) return bySourceId;
+  }
+
+  return actor.items.filter(i => {
+    if ( i.name !== source.name ) return false;
+    if ( source.type && (i.type !== source.type) ) return false;
+    return available(i);
   });
 }
 

@@ -15,6 +15,10 @@
     "Config": {
       "Title": "Light Sources",
       "DropHint": "Drag an item of an enabled type here to register it as a light source.",
+      "AddByName": "Add by Name",
+      "AddByNameTitle": "Add Light Source by Name",
+      "NameLabel": "Name",
+      "NamePlaceholder": "Light source name",
       "Empty": "No light sources registered yet.",
       "OpenItem": "Open Item",
       "SendToChat": "Send to Chat",
@@ -31,7 +35,9 @@
       "Patterns": "{count} patterns",
       "Consumed": "Consumed on use",
       "FreeForAll": "Free for all",
-      "ManagedByTooltip": "Registered by an external system or module: {name}"
+      "ManagedByTooltip": "Registered by an external system or module: {name}",
+      "NameOnlyBadge": "No Item",
+      "NameOnlyTooltip": "Registered by name only — no linked Item."
     },
     "Patterns": {
       "Standard": "Standard",

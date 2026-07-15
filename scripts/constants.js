@@ -129,6 +129,13 @@ export const DEFAULT_LIGHT = {
 export const EXPIRY_CHECK_INTERVAL_MS = 15000;
 
 /**
+ * Fallback icon assigned to a light source registered by name only (no
+ * dragged Item to source an image from). A stable, bundled core Foundry asset.
+ * @type {string}
+ */
+export const DEFAULT_SOURCE_IMG = "icons/svg/fire.svg";
+
+/**
  * Quick radius presets offered for the Dim/Bright radius fields in the light
  * pattern editor. Plain convenience shortcuts — no unit or game system is
  * assumed, so each option's label is just the value itself.
