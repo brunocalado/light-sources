@@ -55,7 +55,7 @@
         "quantity": "Quantity"
       },
       "ItemsHint": "Enable the item types that may be registered as light sources.",
-      "ActorsHint": "Enable the actor types whose tokens show the light-source control on the Token HUD.",
+      "ActorsHint": "Enable the actor types allowed to use \"free for all\" light sources on the Token HUD. Actors carrying a matching light-source item can always use it, regardless of this list.",
       "NoItemTypes": "The active system defines no item types.",
       "NoActorTypes": "The active system defines no actor types.",
       "QuantityPath": "Item Quantity Path",

@@ -96,7 +96,7 @@ Each object in the `entries` array describes a single light source:
     }
   ],
   consume: boolean,          // Optional – subtract one from the item's quantity when lit (default: false)
-  freeForAll: boolean,       // Optional – any eligible actor can light this, no inventory item needed (default: false)
+  freeForAll: boolean,       // Optional – any actor of an Actor-Types-enabled type can light this, no inventory item needed (default: false)
   durationMode: string,      // Optional – "world" (in-game clock) or "real" (wall clock) (default: "world")
   durationMinutes: number    // Optional – minutes until the light burns out; 0 = unlimited (default: 0)
 }
@@ -115,7 +115,9 @@ A source can have **multiple light patterns** — different ways the same item e
 Consumption and duration are shared across all patterns of the same source; only the emitted light shape differs.
 
 #### `freeForAll`
-When `true`, the source appears in the Token HUD for every eligible actor type, even if they don't carry the item in their inventory. The item is never consumed. Useful for ambient environmental effects ("everyone can see in this magically lit area").
+When `true`, the source appears in the Token HUD only for actor types enabled in the module's compatibility settings (the "Actor Types" tab) — it needs no inventory item, and the item is never consumed. Useful for ambient environmental effects ("everyone eligible can see in this magically lit area").
+
+Item-based sources (`freeForAll: false`, the default) work differently: they appear in the Token HUD for **any** actor type that carries a matching item, regardless of the Actor Types setting — carrying the item is itself the permission check. The Actor Types setting only restricts `freeForAll` sources.
 
 #### `durationMode`
 Controls how the countdown timer works:

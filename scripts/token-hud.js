@@ -19,23 +19,25 @@ export function registerTokenHudHooks() {
 }
 
 /**
- * Inject the light-source button and its palette into the Token HUD.
- * Shown only for actors of an enabled type (see the compatibility settings)
- * that either carry at least one registered light-source item, have a
- * "free for all" source available (see the GM config's toggle), or currently
- * have an active light (so it can be put out even after the last item was
- * consumed).
+ * Inject the light-source button and its palette into the Token HUD. Shown
+ * for an actor that either carries at least one registered light-source item
+ * (any actor type — possession of the item is itself sufficient), has a
+ * "free for all" source available and is of an actor type enabled in the
+ * compatibility settings (see the GM config's Actors tab), or currently has
+ * an active light (so it can be put out regardless of actor type, even after
+ * the last item was consumed or removed).
  * @param {foundry.applications.hud.TokenHUD} hud The rendered HUD application.
  * @param {HTMLElement} html The HUD root element.
  */
 function onRenderTokenHUD(hud, html) {
   const actor = hud.object?.document?.actor;
-  if ( !actor || !getActorTypes().includes(actor.type) ) return;
+  if ( !actor ) return;
 
+  const freeForAllAllowed = getActorTypes().includes(actor.type);
   const active = getActiveLight(actor);
   const entries = getSources()
     .map(source => ({ source, items: findMatchingItems(actor, source) }))
-    .filter(entry => entry.source.freeForAll || (entry.items.length > 0));
+    .filter(entry => (entry.items.length > 0) || (entry.source.freeForAll && freeForAllAllowed));
   if ( !entries.length && !active ) return;
 
   // Wrap the toggle and palette together so the palette is positioned relative

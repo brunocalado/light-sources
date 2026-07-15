@@ -22,9 +22,10 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 * 🎨 **A look for every flame.** Each source gets its own light pattern: radius, angle, color, brightness and animation. A candle should feel nothing like a bullseye lantern, and here it doesn't.
 * 🔀 **Multiple patterns per source.** A single item can have more than one way to shine. A lantern might have a "Low" mode with a soft glow and a "High" mode that fills the room — both appear in the Token HUD, and the player just picks the one they want.
 * 👀 **See it before you save it.** While you edit a light pattern, the change is previewed live on the selected token. Tweak until it looks right — nothing is written until you hit Save.
-* 🆓 **Free-for-all lights.** Mark a light source as "Free for All" and every eligible character can use it, even if they don't carry the item. Perfect for magical environmental effects, a bonfire everyone sits around, or a glowing aura that doesn't cost inventory.
+* 🆓 **Free-for-all lights.** Mark a light source as "Free for All" and every character of an actor type you've enabled can use it, even if they don't carry the item — perfect for magical environmental effects, a bonfire everyone sits around, or a glowing aura that doesn't cost inventory. Regular, item-based sources are never restricted this way: carrying the item is always enough, regardless of actor type.
+* ✍️ **Register without an item.** No physical item yet, or want a source that exists by name alone? Click **Add by Name** in the config window to register one instantly — pairs naturally with Free for All.
 * 🪔 **Drop a light on the ground.** Instead of lighting a source on your token, drop it — the item leaves your inventory and becomes an Ambient Light placed on the map at your token's feet. Walk away, and the torch stays behind on the floor. Works even for players; the module relays the request to the GM.
-* 🧩 **Works with any system.** Tell the module which item types are light sources, which actor types carry them, and where an item's quantity lives — then it just works. Daggerheart comes preconfigured out of the box.
+* 🧩 **Works with any system.** Tell the module which item types are light sources, which actor types can use Free-for-All ones, and where an item's quantity lives — then it just works. Daggerheart comes preconfigured out of the box.
 * 📏 **Handy range presets.** Radius fields come with one-click presets (Melee, Very Close, Close, Far) so you can size a light in a click instead of typing.
 * 🗺️ **The light follows the character.** It stays with them across scenes, and blowing it out restores exactly the token lighting they had before.
 * 💬 **Chat announcements.** When a light burns out, a styled chat card lets the whole table know. You can also send any registered light source to chat as a draggable card — drop it on an actor sheet to add it to their inventory.
@@ -34,11 +35,11 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 
 ### For the GM — set it up once
 
-1. Open **Game Settings → Configure Settings → Light Sources → Configure System Compatibility**. Enable the **item types** that count as light sources, the **actor types** that can carry them, and enter the **item quantity path** (where your system stores an item's quantity, e.g. `system.quantity`). On Daggerheart this is already filled in for you.
+1. Open **Game Settings → Configure Settings → Light Sources → Configure System Compatibility**. Enable the **item types** that count as light sources, the **actor types** allowed to use Free-for-All sources (actors carrying the item can always light it, no matter their type), and enter the **item quantity path** (where your system stores an item's quantity, e.g. `system.quantity`). On Daggerheart this is already filled in for you.
 
    ![Configure System Compatibility](docs/system-setup.webp)
 
-2. Open **Configure Light Sources** and drag any item of an enabled type from a compendium or the sidebar into the window to register it.
+2. Open **Configure Light Sources** and drag any item of an enabled type from a compendium or the sidebar into the window to register it — or click **Add by Name** to register a source with just a name, no item required (handy for Free-for-All grants, or for sources you want to set up before the item exists).
 
    ![Registering a light source](docs/add-light-source.webp)
 
@@ -52,14 +53,14 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
      ![Configuring consumption](docs/consumption.webp)
 
 Optional per-source toggles on the config window:
-* **Free for All** — when enabled, every eligible actor can light this source without carrying the item.
+* **Free for All** — when enabled, every actor of an enabled Actor Type can light this source without carrying the item.
 * **Send to Chat** — posts a draggable item card that can be dropped onto actor sheets.
 
 Tip: select a token on the canvas while you edit — you'll watch the light change on the map in real time.
 
 ### For the players — light it up
 
-1. Make sure the item (a Torch, a Lantern...) is in your character's inventory — however your system normally hands out items. (Skip this if the GM marked the source "Free for All" — then it's available to everyone automatically.)
+1. Make sure the item (a Torch, a Lantern...) is in your character's inventory — however your system normally hands out items. (Skip this if the GM marked the source "Free for All" and your character's type is eligible — then it's available automatically.)
 2. Click your token on the map to bring up the Token HUD.
 3. Click the 🔥 **flame button** and choose your light source. If the source has multiple patterns, each one shows as a separate option.
 4. Done — your token is now lighting the room.
