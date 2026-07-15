@@ -31,7 +31,7 @@
       "Patterns": "{count} patterns",
       "Consumed": "Consumed on use",
       "FreeForAll": "Free for all",
-      "ManagedByTooltip": "Registered by an external system or module."
+      "ManagedByTooltip": "Registered by an external system or module: {name}"
     },
     "Patterns": {
       "Standard": "Standard",

@@ -20,6 +20,36 @@ const api = game.lightSources;
 
 Both references point to the same object.
 
+> ⚠️ **Gotcha — `ready`-vs-`ready` race condition**: "Available after the `ready` hook fires" only guarantees the API exists once *Light Sources' own* `ready` handler has finished running — not before. Foundry does not serialize different modules' `Hooks.once("ready", ...)` callbacks relative to each other, and both sides are typically `async`. If your module's `ready` handler happens to execute (or resume after an `await`) before Light Sources' does, `game.modules.get("light-sources")?.api` is still `undefined` at that instant — even though the module is installed, active, and about to set it a moment later.
+>
+> **Symptom**: the naive guard in the [Full Example](#full-example) below (`if (!api) return;`) exits silently. No error, no console output, nothing registered — indistinguishable from the module simply not being installed. This is easy to misdiagnose as a bug in Light Sources itself.
+>
+> **Fix**: check `mod.active` first (so you still no-op cleanly when the module truly isn't present), then poll for the `api` property for a few seconds before giving up — and log a `console.warn` if it never appears, so a genuine failure isn't silent:
+>
+> ```js
+> async function waitForLightSourcesApi(retries = 20, delayMs = 250) {
+>   for (let i = 0; i < retries; i++) {
+>     const api = game.modules.get("light-sources")?.api;
+>     if (api) return api;
+>     await new Promise(resolve => setTimeout(resolve, delayMs));
+>   }
+>   return null;
+> }
+>
+> Hooks.once("ready", async () => {
+>   const mod = game.modules.get("light-sources");
+>   if (!mod?.active) return;
+>
+>   const api = await waitForLightSourcesApi();
+>   if (!api) {
+>     console.warn("My Module | Light Sources is active but its API never became available");
+>     return;
+>   }
+>
+>   await api.registerSources([/* ... */], { managedBy: "my-module" });
+> });
+> ```
+
 ---
 
 ## `registerSources(entries, options?)`
