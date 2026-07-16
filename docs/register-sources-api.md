@@ -112,7 +112,7 @@ The item's `name`, `img`, and `type` are read from the resolved document automat
 #### `patterns`
 A source can have **multiple light patterns** — different ways the same item emits light. For example, a lantern might have a "Low" pattern (dim, warm glow) and a "High" pattern (bright, wide radius). Each pattern appears as a separate entry in the Token HUD. If a source has only one pattern, no sub-label is shown.
 
-Consumption and duration are shared across all patterns of the same source; only the emitted light shape differs.
+Consumption and duration are shared across all patterns of the same source; only the emitted light shape differs. Moving between the patterns of the light already burning reshapes that flame in place: nothing is spent, the countdown keeps running from when the source was first lit, and nothing is announced in chat. A player can therefore switch a lantern between "Low" and "High" freely, and can still switch after burning the last item in the stack.
 
 #### `consume`
 When `true`, **lighting** the source subtracts one from the matching item's quantity, using the quantity path configured in the module's compatibility settings. Activation is the *only* moment an item is ever spent — dropping a lit light on the ground never consumes and never refunds (see [Dropping](#dropping)). A `consume: false` source therefore never touches inventory at any point.
@@ -127,6 +127,8 @@ Item-based sources (`freeForAll: false`, the default) work differently: they app
 #### Dropping
 Any lit light can be dropped on the ground as an AmbientLight from the Token HUD. Dropping **relocates the burning light** — it does not spend an item, whatever the source's `consume` value: a consuming source already paid when it was lit, and a non-consuming one never pays at all. The control appears only on the entry that is currently lit, since there is nothing to relocate otherwise.
 
+A dropped light is a plain AmbientLight with no further ties to the module: it does not inherit the source's remaining duration, it never burns out, and it cannot be picked back up. Register a source with a duration expecting it to expire on the ground and it will not.
+
 `freeForAll` sources are droppable too, but because nothing backs them they could be lit and dropped without limit. The GM world setting **Allow Dropping Free for All Lights** (on by default) gates that; it does not affect item-based sources, which are always droppable while lit. There is no per-source way to opt out of dropping — do not register a source expecting drop to remove it from inventory.
 
 #### `durationMode`
@@ -136,6 +138,21 @@ Controls how the countdown timer works:
 | :--- | :--- |
 | `"world"` | Burns down as the GM advances the in-game world clock. Stays lit while the clock is still. |
 | `"real"` | Burns down in real-world minutes, even while the game is paused or the owning player is offline. |
+
+---
+
+## Chat Announcements
+
+The module posts its own styled chat card for three light events, on every source regardless of how it was registered:
+
+| Event | Announced |
+| :--- | :--- |
+| The source is lit | ✅ Names the actor and the source. With more than one pattern, names the pattern too. |
+| A lit light is dropped | ✅ Only once the light actually reaches the ground. |
+| A duration runs out | ✅ Posted by the active GM's expiry sweep. |
+| Switching between a source's patterns | ❌ Silent — the same flame is being reshaped, not lit. |
+
+There is currently no per-source way to opt out of these announcements.
 
 ---
 

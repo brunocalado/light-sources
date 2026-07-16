@@ -148,6 +148,23 @@ export function findMatchingItems(actor, source) {
 }
 
 /**
+ * Build the ChatMessage data announcing a light event, wrapping the text in the
+ * module's standard chat card and speaking as the actor involved. Returns the
+ * creation data rather than creating the document, so callers can batch several
+ * announcements into one operation (see `sweepExpiredLights` in `light-manager.js`).
+ * @param {Actor} actor The actor the message speaks for.
+ * @param {string} title The card's header text, already localized.
+ * @param {string} message The card's body text, already localized.
+ * @returns {object} ChatMessage creation data ({content, speaker}).
+ */
+export function buildLightMessage(actor, title, message) {
+  return {
+    content: buildChatCard(title, `<p style="color: #fff; margin: 0;">${message}</p>`),
+    speaker: ChatMessage.implementation.getSpeaker({ actor })
+  };
+}
+
+/**
  * Build the module's standard chat card: a bordered, accent-colored header
  * over a themed background image with a dark overlay for legibility.
  * Every rule is inlined so the card renders identically for all connected

@@ -6,7 +6,7 @@
  * it under the terms of the GNU General Public License version 3.
  */
 
-import { MODULE_ID } from "./constants.js";
+import { MODULE_ID, DURATION_MODES } from "./constants.js";
 import { getSources, findMatchingItems, getActorTypes, getAllowFreeForAllDrop } from "./helpers.js";
 import { getActiveLight, activateLight, deactivateLight, dropLight } from "./light-manager.js";
 
@@ -56,6 +56,31 @@ function onRenderTokenHUD(hud, html) {
 }
 
 /**
+ * Build the tooltip for the HUD's flame button. While a light burns, the tooltip
+ * names it and, when it has a duration, how much of it is left. The remaining
+ * time deliberately lives here rather than in the palette: the palette is cramped,
+ * and only one light is ever lit at a time (see `activateLight` in
+ * `light-manager.js`), so a per-row time slot would cost every row to inform one.
+ * @param {object|null} active The actor's active light flag, if any.
+ * @returns {string} The tooltip text.
+ */
+function buildToggleTooltip(active) {
+  if ( !active ) return game.i18n.localize("LIGHTSOURCES.Hud.Tooltip");
+
+  // A light with no duration stores no expiry at all and burns until it is put
+  // out by hand, so there is nothing to count down.
+  const remainingMs = active.mode === DURATION_MODES.REAL
+    ? (active.expiresAtReal != null ? active.expiresAtReal - Date.now() : null)
+    : (active.expiresAtWorld != null ? (active.expiresAtWorld - game.time.worldTime) * 1000 : null);
+  if ( remainingMs === null ) return game.i18n.format("LIGHTSOURCES.Hud.TooltipLit", { item: active.itemName });
+
+  // Round up, and never read "0 min": the light keeps burning until the expiry
+  // sweep catches it, so its last partial minute should still show as one.
+  const minutes = Math.max(1, Math.ceil(remainingMs / 60000));
+  return game.i18n.format("LIGHTSOURCES.Hud.TooltipRemaining", { item: active.itemName, minutes });
+}
+
+/**
  * Build the HUD control button that toggles the light-source palette.
  * @param {HTMLElement} palette The palette element toggled by this button.
  * @param {object|null} active The actor's active light flag, if any.
@@ -66,7 +91,9 @@ function buildToggleButton(palette, active) {
   button.type = "button";
   button.classList.add("control-icon", MODULE_ID, "ls-toggle");
   if ( active ) button.classList.add("ls-lit");
-  const tooltip = game.i18n.localize("LIGHTSOURCES.Hud.Tooltip");
+  // Computed once per render: the remaining time ages while the HUD stays open,
+  // but the HUD re-renders on every token selection and after every light change.
+  const tooltip = buildToggleTooltip(active);
   button.dataset.tooltip = tooltip;
   button.setAttribute("aria-label", tooltip);
   const icon = document.createElement("i");

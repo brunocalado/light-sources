@@ -107,16 +107,22 @@
     },
     "Hud": {
       "Tooltip": "Light Sources",
+      "TooltipLit": "{item} — lit",
+      "TooltipRemaining": "{item} — {minutes} min left",
       "Extinguish": "Extinguish Light",
       "Drop": "Drop",
       "DropTooltip": "Drop this light on the ground as an Ambient Light",
-      "Dropped": "{name} drops {item} as a light on the ground.",
       "NoGm": "No GM is connected to place the light. Ask a GM to log in and try again.",
       "NoItem": "{name} no longer carries {item}."
     },
     "Chat": {
       "ExpiredTitle": "Light Burns Out",
       "Expired": "The {item} carried by {actor} burns out.",
+      "LitTitle": "Light Lit",
+      "Lit": "{actor} lights {item}.",
+      "LitPattern": "{actor} lights {item} ({pattern}).",
+      "DroppedTitle": "Light Dropped",
+      "Dropped": "{actor} drops {item} on the ground.",
       "DragHint": "Drag onto an Actor sheet to add it to their inventory."
     }
   }

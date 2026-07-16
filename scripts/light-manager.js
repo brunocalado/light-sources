@@ -7,7 +7,7 @@
  */
 
 import { MODULE_ID, FLAGS, DURATION_MODES, LIGHT_CHANGE_PRIORITY, EXPIRY_CHECK_INTERVAL_MS } from "./constants.js";
-import { findMatchingItems, buildChatCard, getItemQuantity, getQuantityPath } from "./helpers.js";
+import { findMatchingItems, buildLightMessage, getItemQuantity, getQuantityPath } from "./helpers.js";
 
 /**
  * Interval id of the real-time expiry ticker, so it is only ever started once
@@ -91,6 +91,10 @@ function buildLightChanges(pattern) {
  * Actor, so its light applies to every token of that actor across all scenes and
  * follows the character; extinguishing is simply deleting the effect, which
  * reverts the token to its original light with no stored snapshot.
+ *
+ * Re-lighting the source already burning is a *pattern switch* and takes a separate
+ * path: it reshapes the existing flame in place instead of spending a second item and
+ * restarting the clock (see `switchPattern`).
  * @param {Actor} actor The actor (world actor, or synthetic actor of an unlinked token).
  * @param {object} source The registered light source definition. When
  *   `source.freeForAll` is set, the item lookup and quantity consumption are
@@ -103,6 +107,13 @@ function buildLightChanges(pattern) {
  * @returns {Promise<void>}
  */
 export async function activateLight(actor, source, pattern) {
+  // Matched on the source alone, not the pattern: a source's patterns are ways for
+  // the same flame to burn, so moving between them is never a new light.
+  const effect = getLightEffect(actor);
+  if ( effect?.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT)?.sourceId === source.id ) {
+    return switchPattern(actor, effect, pattern);
+  }
+
   if ( source.consume && !source.freeForAll ) {
     const item = findMatchingItems(actor, source)[0];
     if ( !item ) {
@@ -159,6 +170,42 @@ export async function activateLight(actor, source, pattern) {
     system: { changes: buildLightChanges(pattern) },
     flags: { [MODULE_ID]: { [FLAGS.EFFECT_LIGHT]: flagValue } }
   }]);
+
+  // Name the pattern only when the source has more than one: a lone pattern is
+  // the implicit default and its name carries no information (it may be empty).
+  const announcement = (source.patterns?.length > 1) && pattern.name
+    ? game.i18n.format("LIGHTSOURCES.Chat.LitPattern", { actor: actor.name, item: source.name, pattern: pattern.name })
+    : game.i18n.format("LIGHTSOURCES.Chat.Lit", { actor: actor.name, item: source.name });
+  await ChatMessage.implementation.createDocuments([
+    buildLightMessage(actor, game.i18n.localize("LIGHTSOURCES.Chat.LitTitle"), announcement)
+  ]);
+}
+
+/**
+ * Move the light already burning on an Actor to another of its source's patterns —
+ * a flashlight going from wide beam to narrow, not a second flashlight.
+ *
+ * The effect is updated in place rather than replaced, which is what makes the
+ * source's consumption and duration genuinely shared across its patterns (as the
+ * light editor promises the GM): no item is spent, and the untouched `duration`
+ * keeps counting from the original light's start, so the native expiry still lands
+ * where it always would have. The bookkeeping flag is rewritten wholesale from the
+ * previous payload with only the pattern fields moved, so the source, the item name
+ * and both expiry stamps survive verbatim — a GM re-timing the source mid-burn does
+ * not retime a flame that is already lit. Nothing is announced in chat: the table
+ * already heard this light being lit.
+ * @param {Actor} actor The actor whose light is being reshaped.
+ * @param {ActiveEffect} effect The module's light effect currently on the actor.
+ * @param {object} pattern The light pattern ({id, name, light}) to switch to.
+ * @returns {Promise<void>}
+ */
+async function switchPattern(actor, effect, pattern) {
+  const flag = effect.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT);
+  await actor.updateEmbeddedDocuments("ActiveEffect", [{
+    _id: effect.id,
+    system: { changes: buildLightChanges(pattern) },
+    flags: { [MODULE_ID]: { [FLAGS.EFFECT_LIGHT]: { ...flag, patternId: pattern.id, patternName: pattern.name } } }
+  }]);
 }
 
 /**
@@ -168,7 +215,8 @@ export async function activateLight(actor, source, pattern) {
  * spending is entirely activation's business (see `activateLight`). A consuming
  * source already paid for this light when it was lit; a non-consuming source
  * never pays at all. Re-lighting afterwards is a deliberate, manual action.
- * The light is placed at the token's center using the given pattern's light data.
+ * The light is placed at the token's center using the given pattern's light data,
+ * and announced in chat once it is down.
  * @param {Actor} actor The actor dropping the light.
  * @param {object} source The registered light source definition. Must be the source
  *   of the actor's currently active light — dropping is a no-op otherwise.
@@ -191,8 +239,18 @@ export async function dropLight(actor, source, pattern, token) {
   // AmbientLight documents anchor on their center point, so drop the light at the
   // token's center rather than its top-left origin (token.x / token.y).
   const { x, y } = token.center;
-  await placeAmbientLight(canvas.scene?.id, { x, y, config: buildLightData(pattern) });
-  ui.notifications.info(game.i18n.format("LIGHTSOURCES.Hud.Dropped", { name: actor.name, item: source.name }));
+  const placed = await placeAmbientLight(canvas.scene?.id, { x, y, config: buildLightData(pattern) });
+  // Nothing reached the ground (no scene, or no GM to place it): stay silent rather
+  // than announce a light that does not exist. `placeAmbientLight` reports the cause.
+  if ( !placed ) return;
+
+  await ChatMessage.implementation.createDocuments([
+    buildLightMessage(
+      actor,
+      game.i18n.localize("LIGHTSOURCES.Chat.DroppedTitle"),
+      game.i18n.format("LIGHTSOURCES.Chat.Dropped", { actor: actor.name, item: source.name })
+    )
+  ]);
 }
 
 /**
@@ -201,19 +259,19 @@ export async function dropLight(actor, source, pattern, token) {
  * a non-GM caller hands the request off over the module socket.
  * @param {string} sceneId The id of the scene to place the light on.
  * @param {object} lightData The AmbientLight creation data ({x, y, config}).
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>} True once the light is placed, or handed to the active
+ *   GM to place. The relay is fire-and-forget, so a player only ever learns that the
+ *   request was accepted — not that the document was created.
  */
 async function placeAmbientLight(sceneId, lightData) {
-  if ( !sceneId ) return;
-  if ( game.user.isGM ) {
-    await createAmbientLight(sceneId, lightData);
-    return;
-  }
+  if ( !sceneId ) return false;
+  if ( game.user.isGM ) return createAmbientLight(sceneId, lightData);
   if ( !game.users.activeGM ) {
     ui.notifications.warn(game.i18n.localize("LIGHTSOURCES.Hud.NoGm"));
-    return;
+    return false;
   }
   game.socket.emit(`module.${MODULE_ID}`, { action: "dropLight", sceneId, lightData });
+  return true;
 }
 
 /**
@@ -221,12 +279,14 @@ async function placeAmbientLight(sceneId, lightData) {
  * or on the active GM after a socket relay from a player.
  * @param {string} sceneId The id of the scene to place the light on.
  * @param {object} lightData The AmbientLight creation data ({x, y, config}).
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>} True when the light was created, false when the scene
+ *   no longer exists.
  */
 async function createAmbientLight(sceneId, lightData) {
   const scene = game.scenes.get(sceneId);
-  if ( !scene ) return;
+  if ( !scene ) return false;
   await scene.createEmbeddedDocuments("AmbientLight", [lightData]);
+  return true;
 }
 
 /**
@@ -322,13 +382,11 @@ export async function sweepExpiredLights() {
   }
   for ( const [actor, ids] of byActor ) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
 
-  await ChatMessage.implementation.createDocuments(expired.map(({ actor, itemName }) => ({
-    content: buildChatCard(
-      game.i18n.localize("LIGHTSOURCES.Chat.ExpiredTitle"),
-      `<p style="color: #fff; margin: 0;">${game.i18n.format("LIGHTSOURCES.Chat.Expired", { actor: actor.name, item: itemName })}</p>`
-    ),
-    speaker: ChatMessage.implementation.getSpeaker({ actor })
-  })));
+  await ChatMessage.implementation.createDocuments(expired.map(({ actor, itemName }) => buildLightMessage(
+    actor,
+    game.i18n.localize("LIGHTSOURCES.Chat.ExpiredTitle"),
+    game.i18n.format("LIGHTSOURCES.Chat.Expired", { actor: actor.name, item: itemName })
+  )));
 }
 
 /**
