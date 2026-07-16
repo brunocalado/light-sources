@@ -47,9 +47,9 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
 
   /**
    * Working copy of the pattern list, used to carry unsaved edits across the
-   * re-renders triggered by adding or removing a pattern (the rendered form is
-   * otherwise the single source of truth). Null until the first add/remove.
-   * @type {Array<{id: string, name: string, light: object}>|null}
+   * re-renders triggered by adding, removing or restoring a pattern (the rendered
+   * form is otherwise the single source of truth). Null until the first such edit.
+   * @type {Array<{id: string, name: string, light: object, moduleName: (string|undefined), moduleLight: (object|undefined)}>|null}
    */
   #draftPatterns = null;
 
@@ -71,7 +71,8 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
     position: { width: 480, height: "auto" },
     actions: {
       addPattern: this.prototype._onAddPattern,
-      removePattern: this.prototype._onRemovePattern
+      removePattern: this.prototype._onRemovePattern,
+      restorePattern: this.prototype._onRestorePattern
     },
     form: {
       handler: this._onFormSubmit,
@@ -239,8 +240,9 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
   /**
    * Read every pattern from the current form state, sanitized into the stored
    * pattern shape. The form is the source of truth for unsaved edits, so this
-   * backs both the live preview and the add/remove pattern actions.
-   * @returns {Array<{id: string, name: string, light: object}>} The patterns.
+   * backs both the live preview and the add/remove/restore pattern actions.
+   * @returns {Array<{id: string, name: string, light: object, moduleName: (string|undefined), moduleLight: (object|undefined)}>}
+   *   The patterns (see `#patternsFromData`).
    */
   #readFormPatterns() {
     const formData = new foundry.applications.ux.FormDataExtended(this.form);
@@ -252,20 +254,34 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
    * turns the indexed `patterns.<i>.*` field names into an object keyed by index
    * (not a true array), so entries are re-sorted by their numeric index.
    * @param {object} data Expanded form data (see foundry.utils.expandObject).
-   * @returns {Array<{id: string, name: string, light: object}>} The patterns.
+   * @returns {Array<{id: string, name: string, light: object, moduleName: (string|undefined), moduleLight: (object|undefined)}>}
+   *   The patterns, each carrying its module default snapshot when it has one.
    */
   #patternsFromData(data) {
+    const stored = this.source?.patterns ?? [];
     const raw = data.patterns ?? {};
     const entries = Array.isArray(raw)
       ? raw.map((value, index) => [index, value])
       : Object.entries(raw);
     return entries
       .sort((a, b) => Number(a[0]) - Number(b[0]))
-      .map(([, p]) => ({
-        id: p.id || foundry.utils.randomID(),
-        name: (p.name ?? "").trim(),
-        light: this.#buildLightPatch(p)
-      }));
+      .map(([, p]) => {
+        const pattern = {
+          id: p.id || foundry.utils.randomID(),
+          name: (p.name ?? "").trim(),
+          light: this.#buildLightPatch(p)
+        };
+        // A registered pattern's module snapshot has no form field of its own, so
+        // it has to be carried across explicitly or a plain save would strip it
+        // and silently break "restore to module default". Matched on id, never on
+        // name: renaming a pattern is exactly what the form may have just done.
+        const previous = stored.find(sp => sp.id === pattern.id);
+        if ( previous?.moduleLight ) Object.assign(pattern, {
+          moduleName: previous.moduleName,
+          moduleLight: previous.moduleLight
+        });
+        return pattern;
+      });
   }
 
   /**
@@ -322,6 +338,9 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
       name: pattern.name,
       index,
       light: pattern.light,
+      // Only a pattern a module registered has a default to fall back to; one the
+      // GM added by hand carries no snapshot.
+      canRestore: !!pattern.moduleLight,
       dimPresets: this.#buildPresetOptions(pattern.light.dim, RANGE_PRESETS),
       brightPresets: this.#buildPresetOptions(pattern.light.bright, RANGE_PRESETS),
       animationTypes: this.#buildAnimationOptions(pattern.light.animation?.type)
@@ -402,6 +421,30 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
+   * Revert the clicked pattern to the light its managing module registered,
+   * preserving every other pattern's current form edits. Like adding and removing
+   * a pattern, this only rewrites the form — nothing is persisted until the GM
+   * saves. Declared in DEFAULT_OPTIONS.actions.
+   * @param {PointerEvent} event The originating click event.
+   * @param {HTMLElement} target The element bearing the data-action.
+   * @returns {Promise<void>}
+   */
+  async _onRestorePattern(event, target) {
+    const index = Number(target.closest("[data-pattern-index]")?.dataset.patternIndex);
+    const patterns = this.#readFormPatterns();
+    const pattern = patterns[index];
+    if ( !pattern?.moduleLight ) return;
+    pattern.name = pattern.moduleName;
+    pattern.light = foundry.utils.deepClone(pattern.moduleLight);
+    this.#draftPatterns = patterns;
+    this.#activePatternIndex = index;
+    await this.render();
+    // The restored values are the point of the click: show them on the previewed
+    // token straight away rather than waiting for the next form interaction.
+    this.#applyPreviewLight();
+  }
+
+  /**
    * Form submission handler: sanitize the submitted values, write them back
    * into the world setting and refresh the parent configuration app.
    * Called by ApplicationV2 with `this` bound to the application instance.
@@ -420,6 +463,12 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
     source.durationMode = data.durationMode === DURATION_MODES.REAL ? DURATION_MODES.REAL : DURATION_MODES.WORLD;
     source.durationMinutes = Math.max(0, Math.round(Number(data.durationMinutes) || 0));
     source.patterns = this.#patternsFromData(data);
+    // Freeze the source so the next registerSources call stops overwriting these
+    // values; only an explicit restore (see `_onRestoreDefault` in
+    // light-sources-config.js) hands control back to the module. Keyed on the
+    // snapshot, not on `managedBy`: the latter is an optional cosmetic stamp, so
+    // a module that omits it must still not lose the GM's work.
+    if ( source.moduleDefaults ) source.customized = true;
 
     await setSources(sources);
     this.options.configApp?.render();

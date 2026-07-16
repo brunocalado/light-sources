@@ -53,6 +53,15 @@
                 aria-label="{{localize 'LIGHTSOURCES.Config.Edit'}}">
           <i class="fa-solid fa-pen-to-square" inert></i>
         </button>
+        {{#if this.hasModuleDefault}}
+        {{!-- aria-disabled, not the disabled attribute: a disabled button fires no
+              mouse events, so its data-tooltip — the only thing explaining why the
+              control is inert — would never appear. _onRestoreDefault no-ops. --}}
+        <button type="button" class="ls-restore" data-action="restoreDefault" data-tooltip="{{this.restoreTooltip}}"
+                aria-label="{{localize 'LIGHTSOURCES.Config.Restore'}}" aria-disabled="{{#if this.customized}}false{{else}}true{{/if}}">
+          <i class="fa-solid fa-rotate-left" inert></i>
+        </button>
+        {{/if}}
         <button type="button" data-action="deleteSource" data-tooltip="{{localize 'LIGHTSOURCES.Config.Delete'}}"
                 aria-label="{{localize 'LIGHTSOURCES.Config.Delete'}}">
           <i class="fa-solid fa-trash" inert></i>

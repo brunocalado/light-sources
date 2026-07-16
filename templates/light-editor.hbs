@@ -19,6 +19,12 @@
         <input type="text" class="ls-pattern-name" name="patterns.{{this.index}}.name"
                value="{{this.name}}" placeholder="{{localize 'LIGHTSOURCES.Patterns.NamePlaceholder'}}"
                aria-label="{{localize 'LIGHTSOURCES.Patterns.NamePlaceholder'}}">
+        {{#if this.canRestore}}
+        <button type="button" class="ls-pattern-restore" data-action="restorePattern" data-pattern-index="{{this.index}}"
+                data-tooltip="{{localize 'LIGHTSOURCES.Patterns.Restore'}}" aria-label="{{localize 'LIGHTSOURCES.Patterns.Restore'}}">
+          <i class="fa-solid fa-rotate-left" inert></i>
+        </button>
+        {{/if}}
         {{#if ../canRemove}}
         <button type="button" class="ls-pattern-remove" data-action="removePattern" data-pattern-index="{{this.index}}"
                 data-tooltip="{{localize 'LIGHTSOURCES.Patterns.Remove'}}" aria-label="{{localize 'LIGHTSOURCES.Patterns.Remove'}}">

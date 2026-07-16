@@ -143,10 +143,25 @@ Controls how the countdown timer works:
 
 - **New source**: If no registered source shares the same UUID, the item is resolved via `fromUuid`, and a new entry is appended.
 - **Existing source**: If a source with the same UUID already exists, it is **updated in-place**. Its internal `id` is preserved so that any active effects currently on actors remain valid.
-- **Pattern matching**: When updating, patterns are matched by `name`. A pattern whose name already exists keeps its internal `id`; a new name generates a new `id`.
+- **Pattern matching**: When updating, patterns are matched by the name **you last supplied** for them, not by their current display name — so a pattern the GM has renamed still matches, and keeps its internal `id`. A name you have never registered before generates a new pattern.
 - **Unresolvable UUID**: Logged as `console.warn` and skipped silently.
 
 All updates from a single `registerSources` call are batched into **one write** to the settings database.
+
+---
+
+## GM Customization (important)
+
+The values you pass are **defaults, not enforced settings**. The GM can edit any registered source in the module's configuration window, and the module protects that work — automatically, for every source registered through this API:
+
+- As soon as the GM saves an edit to one of your sources, that source is **frozen**. Your subsequent `registerSources` calls will no longer overwrite its patterns, consumption, duration or free-for-all flag.
+- Your calls are still not wasted on a frozen source. The module keeps a **snapshot of the latest values you registered**, so:
+  - A pattern you have **added** since the GM's edit is still appended to the source — the GM sees your new patterns without losing their own changes.
+  - When the GM clicks **Restore Module Default**, the source reverts to the values from your **most recent** call, not to whatever you registered the first time. Shipping new defaults in a module update is therefore always worthwhile, even for sources a GM has already customized.
+- Restoring also **unfreezes** the source, so it resumes updating automatically from your next call onward.
+- Patterns the GM added by hand have no snapshot of yours behind them. They are never overwritten, and never removed by a restore.
+
+Practical consequence: **do not** rely on `registerSources` to force a source back to a known state — a GM edit intentionally wins over your payload. If your module needs to react to the GM's values, read the stored sources rather than assuming your own payload is live.
 
 ---
 
@@ -155,6 +170,8 @@ All updates from a single `registerSources` call are batched into **one write** 
 When `options.managedBy` is set, every source created or updated by that call is stamped with the value. In the GM's **Configure Light Sources** window, these sources display a read-only badge indicating external management.
 
 Sources with a `managedBy` stamp **can still be manually deleted** by the GM — the badge is informational, not a hard lock.
+
+`managedBy` is **purely cosmetic**, and stays optional. It does not affect [GM customization](#gm-customization-important): every source registered through this API is protected and restorable whether or not you pass it. Do pass it anyway — it is the only thing telling a GM which module a source came from.
 
 ---
 
@@ -250,7 +267,8 @@ In this example:
 ## Tips
 
 - **Call it in `ready`**: The API is assigned in the `ready` hook. Settings and compendium indices are available at that point, so UUIDs can be resolved.
-- **Idempotent**: You can call `registerSources` multiple times with the same entries safely — existing sources are updated, not duplicated.
+- **Idempotent**: You can call `registerSources` multiple times with the same entries safely — existing sources are updated, not duplicated, and a source the GM has customized is never clobbered (see [GM Customization](#gm-customization-important)).
+- **Re-register every session**: The intended pattern is to pass your full, static entry list on every `ready`. That keeps sources in sync with your module's current defaults without ever overwriting the GM's edits.
 - **One write per call**: All entries are batched into a single database write. Pass all your sources in one array rather than making separate calls.
 - **System presets**: If your system already has built-in presets in the module (like Daggerheart), the API lets you replace or extend them programmatically.
 

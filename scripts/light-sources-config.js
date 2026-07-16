@@ -37,6 +37,7 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
       sendToChat: this.prototype._onSendToChat,
       toggleFreeForAll: this.prototype._onToggleFreeForAll,
       editSource: this.prototype._onEditSource,
+      restoreDefault: this.prototype._onRestoreDefault,
       deleteSource: this.prototype._onDeleteSource
     }
   };
@@ -67,7 +68,15 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
       // the implicit default and needs no badge.
       patternLabel: source.patterns.length > 1
         ? game.i18n.format("LIGHTSOURCES.Config.Patterns", { count: source.patterns.length })
-        : null
+        : null,
+      // Only a source registered through the API has a module default behind it;
+      // one the GM added by hand has nothing to restore to. The control is then
+      // rendered for all of them but stays inert until the GM edits one, so the
+      // tooltip has to explain both states.
+      hasModuleDefault: !!source.moduleDefaults,
+      restoreTooltip: source.customized
+        ? game.i18n.localize("LIGHTSOURCES.Config.RestoreTooltip")
+        : game.i18n.localize("LIGHTSOURCES.Config.RestoreDisabledTooltip")
     }));
     return context;
   }
@@ -276,6 +285,9 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
     const source = sources.find(s => s.id === sourceId);
     if ( !source ) return;
     source.freeForAll = !source.freeForAll;
+    // Freeze the source against the next registerSources call, exactly as saving
+    // the light editor does (see `_onFormSubmit` in light-editor.js).
+    if ( source.moduleDefaults ) source.customized = true;
     await setSources(sources);
     this.render();
   }
@@ -290,6 +302,41 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
     const sourceId = target.closest("[data-source-id]")?.dataset.sourceId;
     if ( !sourceId ) return;
     new LightSourceEditor({ sourceId, configApp: this }).render(true);
+  }
+
+  /**
+   * Discard the GM's edits to the clicked source and restore the values its
+   * managing module last supplied, unfreezing it so `registerSources` resumes
+   * updating it automatically. Declared in DEFAULT_OPTIONS.actions.
+   * @param {PointerEvent} event The originating click event.
+   * @param {HTMLElement} target The element bearing the data-action.
+   * @returns {Promise<void>}
+   */
+  async _onRestoreDefault(event, target) {
+    const sourceId = target.closest("[data-source-id]")?.dataset.sourceId;
+    const sources = getSources();
+    const source = sources.find(s => s.id === sourceId);
+    if ( !source?.customized ) return;
+    const confirmed = await DialogV2.confirm({
+      window: { title: "LIGHTSOURCES.Config.RestoreTitle" },
+      content: `<p>${game.i18n.format("LIGHTSOURCES.Config.RestoreContent", { name: source.name })}</p>`
+    });
+    if ( !confirmed ) return;
+
+    Object.assign(source, source.moduleDefaults);
+    for ( const pattern of source.patterns ) {
+      // A pattern with no snapshot was added by the GM, not by the module: a
+      // restore reverts the module's own patterns, it never deletes work the
+      // module did not supply. The next registerSources call — which the source
+      // is no longer frozen against — prunes any pattern the module has dropped.
+      if ( !pattern.moduleLight ) continue;
+      pattern.name = pattern.moduleName;
+      pattern.light = foundry.utils.deepClone(pattern.moduleLight);
+    }
+    source.customized = false;
+
+    await setSources(sources);
+    this.render();
   }
 
   /**

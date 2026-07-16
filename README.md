@@ -102,6 +102,8 @@ Hooks.once("ready", async () => {
 
 Registered sources appear in the Token HUD and in the GM's configuration window with a badge showing which module manages them.
 
+Registered values are **defaults, not locks**: once the GM edits one of these sources it stops being overwritten, and a **Restore Module Default** control puts it back — either for the whole source, or for a single light pattern. See the [Register Sources API docs](docs/register-sources-api.md#gm-customization-important) for the full contract.
+
 ## 🚀 Installation
 
 Install via the Foundry VTT Module browser or use this manifest link:

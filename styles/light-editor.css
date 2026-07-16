@@ -98,6 +98,7 @@
       font-weight: bold;
     }
 
+    .ls-pattern-restore,
     .ls-pattern-remove {
       flex: none;
       width: var(--input-height, 1.75rem);

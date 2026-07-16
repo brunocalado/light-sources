@@ -159,6 +159,13 @@
         text-shadow: 0 0 8px var(--light-sources-accent);
       }
     }
+
+    /* Kept in the row (rather than hidden) while there is nothing to restore, so
+     * the controls never shift as a source's customized state changes. */
+    .ls-restore[aria-disabled="true"] {
+      opacity: 0.4;
+      cursor: default;
+    }
   }
 
   .ls-empty {

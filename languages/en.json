@@ -29,6 +29,11 @@
       "NoItemReference": "No linked Item found. Re-drag this light source to enable this action.",
       "Grant": "Free for All (No Item Required)",
       "Edit": "Edit Light Pattern",
+      "Restore": "Restore Module Default",
+      "RestoreTooltip": "Discard your changes and restore the values this source's module registered. It will resume updating automatically.",
+      "RestoreDisabledTooltip": "Nothing to restore — you have not changed this light source since its module registered it.",
+      "RestoreTitle": "Restore Module Default",
+      "RestoreContent": "Discard your changes to <strong>{name}</strong> and restore the light patterns, consumption and duration its module registered?",
       "Delete": "Remove Light Source",
       "DeleteTitle": "Remove Light Source",
       "DeleteContent": "Remove <strong>{name}</strong> from the registered light sources?",
@@ -48,7 +53,8 @@
       "New": "New Pattern",
       "NamePlaceholder": "Pattern name",
       "Add": "Add Pattern",
-      "Remove": "Remove Pattern"
+      "Remove": "Remove Pattern",
+      "Restore": "Restore this pattern to its module default"
     },
     "Compat": {
       "Title": "System Compatibility",
