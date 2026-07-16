@@ -17,8 +17,22 @@
     }
   }
 
+  /* The window owns the height budget and never scrolls itself; the active tab
+   * takes the leftover space and delegates scrolling to exactly one region
+   * inside it, so the Save footer stays pinned and reachable at all times. */
   .window-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     padding-block-start: 0.25rem;
+    overflow: hidden;
+  }
+
+  .ls-light-editor-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 
   /* Guarantee tab visibility toggling regardless of the host theme. */
@@ -31,15 +45,40 @@
 
   .tab.active {
     display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* The Consumption tab has no list to delegate scrolling to, so it scrolls
+   * itself once its hints outgrow a short window. Both axes are set explicitly:
+   * a lone `overflow-y` computes the other axis from `visible` to `auto`, which
+   * would let any stray wide child add a horizontal scrollbar. */
+  .tab[data-tab="usage"] {
+    overflow: hidden auto;
   }
 
   .sheet-tabs {
+    flex: none;
     margin: 0 0 0.5rem;
     border-bottom: 1px solid var(--color-border, #7a7971);
 
     a {
       white-space: nowrap;
     }
+  }
+
+  /* Direct children only: a hint inside a .form-group is a flex item of core's
+   * wrapping row, where `flex: none` would resolve its basis to max-content and
+   * stop it wrapping. Here the parent is the tab's column, so this only keeps
+   * the standalone hints from being squeezed vertically. */
+  .tab > .hint {
+    flex: none;
+  }
+
+  .form-footer {
+    flex: none;
+    margin: 0;
+    padding-top: 0.5rem;
   }
 
   .ls-value-field {
@@ -58,29 +97,36 @@
     }
   }
 
-  /* Scroll the pattern stack rather than let the auto-height window grow past
-   * the viewport once a source gains several patterns. The extra inline
-   * padding keeps each card's shadow from being clipped by the scroll box. */
+  /* The pattern stack is the tab's only scroll region: it absorbs the leftover
+   * height and scrolls internally, so adding patterns never pushes the footer
+   * out of the window. The inline padding keeps each card's shadow and accent
+   * edge from being clipped by the scroll box. */
   .ls-pattern-list {
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
-    max-height: 60vh;
+    flex: 1;
+    gap: 1rem;
+    min-height: 0;
     padding: 0.125rem;
-    overflow-y: auto;
+    overflow: hidden auto;
   }
 
-  /* A distinct panel per pattern (background + border + shadow) so adjacent
-   * patterns read as separate blocks rather than one continuous form. */
+  /* A distinct panel per pattern (accent edge + tinted header + shadow) so
+   * adjacent patterns read as separate blocks rather than one continuous form.
+   * `flex: none` is load-bearing: `overflow: hidden` zeroes a flex item's
+   * automatic minimum size, so without it the cards shrink to fit the scroll
+   * box and clip their own bodies instead of letting the list scroll. */
   .ls-pattern-card {
     display: flex;
     flex-direction: column;
+    flex: none;
     margin: 0;
     padding: 0;
     border: 1px solid var(--color-border, #7a7971);
+    border-inline-start: 3px solid var(--light-sources-accent);
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.04);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
     overflow: hidden;
   }
 
@@ -89,8 +135,23 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--light-sources-accent) 14%, transparent);
     border-bottom: 1px solid var(--color-border, #7a7971);
+
+    .ls-pattern-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      width: 1.5rem;
+      height: 1.5rem;
+      border: 1px solid var(--light-sources-accent);
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--light-sources-accent) 20%, transparent);
+      color: var(--light-sources-accent);
+      font-size: var(--font-size-12, 12px);
+      font-weight: bold;
+    }
 
     .ls-pattern-name {
       flex: 1;
@@ -120,6 +181,7 @@
   }
 
   .ls-pattern-add {
-    margin-top: 0.5rem;
+    flex: none;
+    margin-bottom: 0.25rem;
   }
 }

@@ -66,9 +66,14 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
     tag: "form",
     window: {
       icon: "fa-solid fa-lightbulb",
-      contentClasses: ["standard-form"]
+      contentClasses: ["standard-form"],
+      resizable: true
     },
-    position: { width: 480, height: "auto" },
+    // A real height rather than "auto": the pattern stack is unbounded, so an
+    // auto-height window grows past the viewport as patterns are added and takes
+    // the Save footer with it. Fixed height + an internally scrolling list keeps
+    // the footer pinned no matter how many patterns a source has.
+    position: { width: 480, height: 760 },
     actions: {
       addPattern: this.prototype._onAddPattern,
       removePattern: this.prototype._onRemovePattern,
@@ -337,6 +342,9 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
       id: pattern.id,
       name: pattern.name,
       index,
+      // Handlebars has no arithmetic helper, so the 1-based badge label is
+      // precomputed here rather than derived in the template.
+      number: index + 1,
       light: pattern.light,
       // Only a pattern a module registered has a default to fall back to; one the
       // GM added by hand carries no snapshot.

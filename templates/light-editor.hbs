@@ -11,10 +11,17 @@
 <section class="tab {{tabs.patterns.cssClass}}" data-group="primary" data-tab="patterns">
   <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.PatternsHint"}}</p>
   <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.PreviewHint"}}</p>
+
+  <button type="button" class="ls-pattern-add" data-action="addPattern">
+    <i class="fa-solid fa-plus" inert></i>
+    <span>{{localize "LIGHTSOURCES.Patterns.Add"}}</span>
+  </button>
+
   <div class="ls-pattern-list">
     {{#each patterns}}
     <fieldset class="ls-pattern-card" data-pattern-index="{{this.index}}">
       <div class="ls-pattern-head">
+        <span class="ls-pattern-number" inert>{{this.number}}</span>
         <input type="hidden" name="patterns.{{this.index}}.id" value="{{this.id}}">
         <input type="text" class="ls-pattern-name" name="patterns.{{this.index}}.name"
                value="{{this.name}}" placeholder="{{localize 'LIGHTSOURCES.Patterns.NamePlaceholder'}}"
@@ -110,11 +117,6 @@
     </fieldset>
     {{/each}}
   </div>
-
-  <button type="button" class="ls-pattern-add" data-action="addPattern">
-    <i class="fa-solid fa-plus" inert></i>
-    <span>{{localize "LIGHTSOURCES.Patterns.Add"}}</span>
-  </button>
 </section>
 
 <section class="tab {{tabs.usage.cssClass}}" data-group="primary" data-tab="usage">
