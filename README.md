@@ -135,4 +135,4 @@ Want to translate this module? It's easy:
 
 * **Code License:** GNU GPLv3.
 
-* [thumbnail/banner](https://unsplash.com/pt-br/fotografias/person-holding-torch-in-building-interior-5DIFvVwe6wka)
+* [thumbnail/banner](https://unsplash.com/license)
