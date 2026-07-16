@@ -195,37 +195,8 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Re-attach the source icons' drag listeners after every render, since the
-   * source list markup (and therefore its <img> elements) is replaced
-   * whenever the PART re-renders.
-   * @param {object} context The render context.
-   * @param {object} options Render options.
-   * @override
-   */
-  _onRender(context, options) {
-    super._onRender(context, options);
-    for ( const icon of this.element.querySelectorAll(".ls-icon") ) {
-      icon.addEventListener("dragstart", this.#onIconDragStart.bind(this));
-    }
-  }
-
-  /**
-   * Set native HTML5 drag data on a source's icon so it can be dropped onto
-   * an Actor sheet exactly like dragging the Item from a compendium or
-   * directory would.
-   * @param {DragEvent} event The dragstart event.
-   */
-  #onIconDragStart(event) {
-    const uuid = event.currentTarget.dataset.uuid;
-    if ( !uuid ) {
-      event.preventDefault();
-      return;
-    }
-    event.dataTransfer.setData("text/plain", JSON.stringify({ type: "Item", uuid }));
-  }
-
-  /**
    * Open the source's linked Item sheet so its details can be inspected.
+   * Bound to the source's icon, which is the only control for this.
    * Declared in DEFAULT_OPTIONS.actions.
    * @param {PointerEvent} event The originating click event.
    * @param {HTMLElement} target The element bearing the data-action.

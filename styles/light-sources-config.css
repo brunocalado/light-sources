@@ -83,10 +83,31 @@
     border: none;
     border-radius: 4px;
     flex: none;
-    cursor: grab;
+    display: block;
+  }
 
-    &:active {
-      cursor: grabbing;
+  /* Wraps the icon of a source with a linked Item, turning it into the control
+   * that opens that Item's sheet. Stripped back to the bare image: core's button
+   * skin (border, background, sizing) would otherwise frame the icon. */
+  .ls-icon-button {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    box-shadow: none;
+    line-height: 0;
+    cursor: pointer;
+
+    &:hover {
+      box-shadow: 0 0 6px var(--light-sources-accent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--light-sources-accent);
+      outline-offset: 2px;
     }
   }
 

@@ -16,7 +16,18 @@
   <ul class="ls-source-list">
     {{#each sources}}
     <li class="ls-source" data-source-id="{{this.id}}">
-      <img class="ls-icon" src="{{this.img}}" alt="{{this.name}}" data-uuid="{{this.uuid}}" draggable="true">
+      {{#if this.uuid}}
+      {{!-- The icon is the "open the linked Item" control. A real <button> (rather
+            than a click handler on the <img>) keeps it keyboard-reachable now that
+            the separate open control is gone. --}}
+      <button type="button" class="ls-icon-button" data-action="openItem"
+              data-tooltip="{{localize 'LIGHTSOURCES.Config.OpenItem'}}"
+              aria-label="{{localize 'LIGHTSOURCES.Config.OpenItem'}}">
+        <img class="ls-icon" src="{{this.img}}" alt="">
+      </button>
+      {{else}}
+      <img class="ls-icon" src="{{this.img}}" alt="{{this.name}}">
+      {{/if}}
       <div class="ls-info">
         <span class="ls-name">{{this.name}}</span>
         <span class="ls-meta">
@@ -35,10 +46,6 @@
       {{/unless}}
       <div class="ls-controls">
         {{#if this.uuid}}
-        <button type="button" data-action="openItem" data-tooltip="{{localize 'LIGHTSOURCES.Config.OpenItem'}}"
-                aria-label="{{localize 'LIGHTSOURCES.Config.OpenItem'}}">
-          <i class="fa-solid fa-book-open" inert></i>
-        </button>
         <button type="button" data-action="sendToChat" data-tooltip="{{localize 'LIGHTSOURCES.Config.SendToChat'}}"
                 aria-label="{{localize 'LIGHTSOURCES.Config.SendToChat'}}">
           <i class="fa-solid fa-comment" inert></i>
