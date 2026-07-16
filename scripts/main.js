@@ -46,6 +46,15 @@ Hooks.once("init", () => {
     default: preset.quantityPath ?? ""
   });
 
+  game.settings.register(MODULE_ID, SETTINGS.ALLOW_FREE_FOR_ALL_DROP, {
+    name: "LIGHTSOURCES.Settings.AllowFreeForAllDrop.Name",
+    hint: "LIGHTSOURCES.Settings.AllowFreeForAllDrop.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   game.settings.registerMenu(MODULE_ID, SETTINGS.MENU, {
     name: "LIGHTSOURCES.Settings.Menu.Name",
     label: "LIGHTSOURCES.Settings.Menu.Label",

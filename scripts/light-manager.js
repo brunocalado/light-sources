@@ -162,37 +162,30 @@ export async function activateLight(actor, source, pattern) {
 }
 
 /**
- * Drop a light source as a standalone AmbientLight on the scene: the light is
- * placed on the ground rather than lit on the token. One matching item is consumed
- * (a dropped light is the physical item left behind, so it is spent regardless of
- * the source's consume-on-use setting; free-for-all sources have no item and never
- * expose the drop control), and the token's current module light — if any — is
- * extinguished, since that light is now the one lying on the ground. Re-lighting is
- * a deliberate, manual action afterwards. The light is placed at the token's center
- * using the given pattern's light data.
+ * Drop the light burning on a token as a standalone AmbientLight on the scene:
+ * the lit light moves from the token to the ground. Dropping only ever relocates
+ * an already-active light, so it never consumes and never refunds an item —
+ * spending is entirely activation's business (see `activateLight`). A consuming
+ * source already paid for this light when it was lit; a non-consuming source
+ * never pays at all. Re-lighting afterwards is a deliberate, manual action.
+ * The light is placed at the token's center using the given pattern's light data.
  * @param {Actor} actor The actor dropping the light.
- * @param {object} source The registered light source definition (never a free-for-all source here).
- * @param {object} pattern The light pattern ({id, name, light}) whose light data is placed.
+ * @param {object} source The registered light source definition. Must be the source
+ *   of the actor's currently active light — dropping is a no-op otherwise.
+ * @param {object} pattern The light pattern ({id, name, light}) whose light data is
+ *   placed. Passed in rather than read from the active-light flag, which stores only
+ *   the pattern's id and name, not its light configuration.
  * @param {foundry.canvas.placeables.Token} token The token placeable the drop originates from.
  * @returns {Promise<void>}
  */
 export async function dropLight(actor, source, pattern, token) {
-  const item = findMatchingItems(actor, source)[0];
-  if ( !item ) {
-    ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Hud.NoItem", { name: actor.name, item: source.name }));
-    return;
-  }
+  // Matched on the source alone, not the pattern: consumption and duration are
+  // shared across a source's patterns, so any of its patterns is the same lit light.
+  // Defensive — the Token HUD only offers the drop control on the lit row.
+  const active = getActiveLight(actor);
+  if ( active?.sourceId !== source.id ) return;
 
-  // Only decrement when a quantity path is configured and resolves to a number;
-  // otherwise the item has no tracked quantity to spend (mirrors activateLight).
-  const quantityPath = getQuantityPath();
-  const quantity = getItemQuantity(item);
-  if ( quantityPath && Number.isFinite(quantity) ) {
-    await Item.implementation.updateDocuments([{ _id: item.id, [quantityPath]: quantity - 1 }], { parent: actor });
-  }
-
-  // The dropped light leaves the token, so extinguish whatever this module has lit
-  // on it (no-op when nothing is lit).
+  // The light is now the one lying on the ground, not the one on the token.
   await deactivateLight(actor);
 
   // AmbientLight documents anchor on their center point, so drop the light at the

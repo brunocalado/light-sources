@@ -7,7 +7,7 @@
  */
 
 import { MODULE_ID } from "./constants.js";
-import { getSources, findMatchingItems, getActorTypes } from "./helpers.js";
+import { getSources, findMatchingItems, getActorTypes, getAllowFreeForAllDrop } from "./helpers.js";
 import { getActiveLight, activateLight, deactivateLight, dropLight } from "./light-manager.js";
 
 /**
@@ -37,7 +37,11 @@ function onRenderTokenHUD(hud, html) {
   const active = getActiveLight(actor);
   const entries = getSources()
     .map(source => ({ source, items: findMatchingItems(actor, source) }))
-    .filter(entry => (entry.items.length > 0) || (entry.source.freeForAll && freeForAllAllowed));
+    // The lit source is always listed, even once its last item has been consumed
+    // down to 0 (lighting the last torch empties the stack): its row is what
+    // carries the extinguish/drop controls for the light already burning.
+    .filter(entry => (entry.items.length > 0) || (entry.source.freeForAll && freeForAllAllowed)
+      || (entry.source.id === active?.sourceId));
   if ( !entries.length && !active ) return;
 
   // Wrap the toggle and palette together so the palette is positioned relative
@@ -81,7 +85,8 @@ function buildToggleButton(palette, active) {
  * extinguish control while a light is burning. Each of a source's light
  * patterns ("stages" — e.g. a flashlight's wide vs. narrow beam) gets its own
  * entry. Only one light can be active at a time: activating any entry simply
- * replaces the current one.
+ * replaces the current one. The lit entry additionally carries a drop control,
+ * since dropping relocates the burning light rather than spending a new item.
  * @param {foundry.applications.hud.TokenHUD} hud The HUD application (re-rendered after changes).
  * @param {Actor} actor The token's actor.
  * @param {Array<{source: object, items: Item[]}>} entries Registered sources present in the inventory.
@@ -97,10 +102,12 @@ function buildPalette(hud, actor, entries, active) {
     const multiPattern = source.patterns.length > 1;
 
     for ( const pattern of source.patterns ) {
+      const isActive = (active?.sourceId === source.id) && (active?.patternId === pattern.id);
+
       const button = document.createElement("button");
       button.type = "button";
       button.classList.add("ls-entry");
-      if ( (active?.sourceId === source.id) && (active?.patternId === pattern.id) ) button.classList.add("ls-active");
+      if ( isActive ) button.classList.add("ls-active");
 
       const img = document.createElement("img");
       img.className = "ls-icon";
@@ -128,12 +135,14 @@ function buildPalette(hud, actor, entries, active) {
         hud.render();
       });
 
-      // Free-for-all sources have no item to leave behind, so they get no drop
-      // control. Every other pattern row can drop this specific pattern's light.
+      // Dropping relocates the light already burning on the token, so it is only
+      // offered on the lit row. Free-for-all lights cost nothing to drop (no item
+      // backs them), so a GM setting gates whether they can be dropped at all.
       // The drop control is a *sibling* of the entry button, not a child: a native
       // <button> swallows pointer events from nested interactive elements, so a
       // nested drop button/span never receives its own clicks.
-      const drop = source.freeForAll ? null : buildDropButton(hud, actor, source, pattern, palette);
+      const droppable = isActive && (!source.freeForAll || getAllowFreeForAllDrop());
+      const drop = droppable ? buildDropButton(hud, actor, source, pattern) : null;
       if ( drop ) {
         const row = document.createElement("div");
         row.classList.add("ls-row");
@@ -169,18 +178,18 @@ function buildPalette(hud, actor, entries, active) {
 }
 
 /**
- * Build the secondary "Drop" control for a pattern row: leaves the light on the
- * ground as an AmbientLight (consuming one item) instead of lighting the token.
- * Rendered as a sibling of the entry button (see `buildPalette`), never nested
- * inside it, so it reliably receives its own clicks.
- * @param {foundry.applications.hud.TokenHUD} hud The HUD application (re-rendered after the drop, to refresh quantities).
+ * Build the secondary "Drop" control for the lit pattern row: moves the burning
+ * light off the token and onto the ground as an AmbientLight, consuming nothing
+ * (see `dropLight` in `light-manager.js`). Only built for the lit row (see
+ * `buildPalette`). Rendered as a sibling of the entry button, never nested inside
+ * it, so it reliably receives its own clicks.
+ * @param {foundry.applications.hud.TokenHUD} hud The HUD application (re-rendered after the drop, which also rebuilds the palette closed).
  * @param {Actor} actor The token's actor.
  * @param {object} source The registered light source definition.
  * @param {object} pattern The specific light pattern this row represents.
- * @param {HTMLElement} palette The palette element (closed after the drop).
  * @returns {HTMLButtonElement} The drop control button.
  */
-function buildDropButton(hud, actor, source, pattern, palette) {
+function buildDropButton(hud, actor, source, pattern) {
   const drop = document.createElement("button");
   drop.type = "button";
   drop.classList.add("ls-drop");

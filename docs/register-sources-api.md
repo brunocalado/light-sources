@@ -95,7 +95,7 @@ Each object in the `entries` array describes a single light source:
       }
     }
   ],
-  consume: boolean,          // Optional – subtract one from the item's quantity when lit (default: false)
+  consume: boolean,          // Optional – subtract one from the item's quantity when lit; the only moment an item is ever spent (default: false)
   freeForAll: boolean,       // Optional – any actor of an Actor-Types-enabled type can light this, no inventory item needed (default: false)
   durationMode: string,      // Optional – "world" (in-game clock) or "real" (wall clock) (default: "world")
   durationMinutes: number    // Optional – minutes until the light burns out; 0 = unlimited (default: 0)
@@ -114,10 +114,20 @@ A source can have **multiple light patterns** — different ways the same item e
 
 Consumption and duration are shared across all patterns of the same source; only the emitted light shape differs.
 
+#### `consume`
+When `true`, **lighting** the source subtracts one from the matching item's quantity, using the quantity path configured in the module's compatibility settings. Activation is the *only* moment an item is ever spent — dropping a lit light on the ground never consumes and never refunds (see [Dropping](#dropping)). A `consume: false` source therefore never touches inventory at any point.
+
+Items are matched by `flags.core.sourceId` (the origin UUID core stamps on an embedded copy), falling back to name + type, so a source keeps working after a player renames the item on their sheet. Items whose quantity has reached 0 stop matching, but the source stays listed in the HUD while its light is still burning, so it can still be extinguished or dropped.
+
 #### `freeForAll`
 When `true`, the source appears in the Token HUD only for actor types enabled in the module's compatibility settings (the "Actor Types" tab) — it needs no inventory item, and the item is never consumed. Useful for ambient environmental effects ("everyone eligible can see in this magically lit area").
 
 Item-based sources (`freeForAll: false`, the default) work differently: they appear in the Token HUD for **any** actor type that carries a matching item, regardless of the Actor Types setting — carrying the item is itself the permission check. The Actor Types setting only restricts `freeForAll` sources.
+
+#### Dropping
+Any lit light can be dropped on the ground as an AmbientLight from the Token HUD. Dropping **relocates the burning light** — it does not spend an item, whatever the source's `consume` value: a consuming source already paid when it was lit, and a non-consuming one never pays at all. The control appears only on the entry that is currently lit, since there is nothing to relocate otherwise.
+
+`freeForAll` sources are droppable too, but because nothing backs them they could be lit and dropped without limit. The GM world setting **Allow Dropping Free for All Lights** (on by default) gates that; it does not affect item-based sources, which are always droppable while lit. There is no per-source way to opt out of dropping — do not register a source expecting drop to remove it from inventory.
 
 #### `durationMode`
 Controls how the countdown timer works:

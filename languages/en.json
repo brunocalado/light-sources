@@ -10,6 +10,10 @@
         "Name": "System Compatibility",
         "Label": "Configure System Compatibility",
         "Hint": "Choose which of the detected system's item and actor types this module uses, and where an item's quantity is stored. GM only."
+      },
+      "AllowFreeForAllDrop": {
+        "Name": "Allow Dropping Free for All Lights",
+        "Hint": "Let a lit \"Free for All\" light be dropped on the ground. No item backs these sources, so dropping one costs nothing and can be repeated without limit. Turn this off to keep free lights on tokens only. Lights that come from a carried item are always droppable."
       }
     },
     "Config": {

@@ -24,7 +24,7 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 * 👀 **See it before you save it.** While you edit a light pattern, the change is previewed live on the selected token. Tweak until it looks right — nothing is written until you hit Save.
 * 🆓 **Free-for-all lights.** Mark a light source as "Free for All" and every character of an actor type you've enabled can use it, even if they don't carry the item — perfect for magical environmental effects, a bonfire everyone sits around, or a glowing aura that doesn't cost inventory. Regular, item-based sources are never restricted this way: carrying the item is always enough, regardless of actor type.
 * ✍️ **Register without an item.** No physical item yet, or want a source that exists by name alone? Click **Add by Name** in the config window to register one instantly — pairs naturally with Free for All.
-* 🪔 **Drop a light on the ground.** Instead of lighting a source on your token, drop it — the item leaves your inventory and becomes an Ambient Light placed on the map at your token's feet. Walk away, and the torch stays behind on the floor. Works even for players; the module relays the request to the GM.
+* 🪔 **Drop a light on the ground.** Light a source, then drop it — the burning light leaves your token and becomes an Ambient Light placed on the map at your token's feet. Walk away, and the torch stays behind on the floor. Dropping costs nothing extra: it puts down the light you already lit. Works even for players; the module relays the request to the GM.
 * 🧩 **Works with any system.** Tell the module which item types are light sources, which actor types can use Free-for-All ones, and where an item's quantity lives — then it just works. Daggerheart comes preconfigured out of the box.
 * 📏 **Handy range presets.** Radius fields come with one-click presets (Melee, Very Close, Close, Far) so you can size a light in a click instead of typing.
 * 🗺️ **The light follows the character.** It stays with them across scenes, and blowing it out restores exactly the token lighting they had before.
@@ -56,6 +56,9 @@ Optional per-source toggles on the config window:
 * **Free for All** — when enabled, every actor of an enabled Actor Type can light this source without carrying the item.
 * **Send to Chat** — posts a draggable item card that can be dropped onto actor sheets.
 
+There is also one world setting under **Game Settings → Configure Settings → Light Sources**:
+* **Allow Dropping Free for All Lights** (on by default) — whether a lit Free-for-All light can be dropped on the ground. No item backs these sources, so dropping one costs nothing and can be repeated without limit; turn this off if you'd rather free lights stayed on tokens. Lights that come from a carried item are always droppable.
+
 Tip: select a token on the canvas while you edit — you'll watch the light change on the map in real time.
 
 ### For the players — light it up
@@ -69,7 +72,7 @@ Tip: select a token on the canvas while you edit — you'll watch the light chan
 
 To put it out, open the same menu and click **Extinguish Light**. If it burns out on its own first, everyone sees it happen in chat.
 
-**Drop a light**: next to each entry in the flame menu you'll see a **Drop** button. Click it to leave the light on the ground as an Ambient Light — useful for torches left behind in a hallway or campfires.
+**Drop a light**: once a light is burning, a **Drop** button appears next to it in the flame menu. Click it to put that light on the ground as an Ambient Light — useful for torches left behind in a hallway or campfires. Your token goes dark and the light stays where you dropped it. Nothing extra is consumed: you're putting down the light you already lit, not spending a second torch.
 
 ![Dropping a light source on the ground](docs/drop-light.gif)
 

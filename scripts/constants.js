@@ -20,7 +20,9 @@ export const MODULE_ID = "light-sources";
  * - `ITEM_TYPES` / `ACTOR_TYPES`: which of the detected system's document
  *   types this module treats as light-source items / light-bearing actors.
  * - `QUANTITY_PATH`: dotted path (from the item root) to an item's quantity.
- * @type {{SOURCES: string, MENU: string, COMPAT_MENU: string, ITEM_TYPES: string, ACTOR_TYPES: string, QUANTITY_PATH: string}}
+ * - `ALLOW_FREE_FOR_ALL_DROP`: whether "free for all" lights may be dropped on
+ *   the ground (see `getAllowFreeForAllDrop` in `helpers.js`).
+ * @type {{SOURCES: string, MENU: string, COMPAT_MENU: string, ITEM_TYPES: string, ACTOR_TYPES: string, QUANTITY_PATH: string, ALLOW_FREE_FOR_ALL_DROP: string}}
  */
 export const SETTINGS = {
   SOURCES: "sources",
@@ -28,7 +30,8 @@ export const SETTINGS = {
   COMPAT_MENU: "compatibility",
   ITEM_TYPES: "itemTypes",
   ACTOR_TYPES: "actorTypes",
-  QUANTITY_PATH: "quantityPath"
+  QUANTITY_PATH: "quantityPath",
+  ALLOW_FREE_FOR_ALL_DROP: "allowFreeForAllDrop"
 };
 
 /**

@@ -57,6 +57,18 @@ export function getActorTypes() {
 }
 
 /**
+ * Whether "free for all" lights may be dropped on the ground. Dropping only ever
+ * relocates an already-lit light and never consumes anything, so a free-for-all
+ * source — which has no item behind it — could otherwise be lit and dropped
+ * without limit, filling a scene with AmbientLights at no cost. GMs who don't
+ * want that switch it off.
+ * @returns {boolean} True when free-for-all lights may be dropped.
+ */
+export function getAllowFreeForAllDrop() {
+  return game.settings.get(MODULE_ID, SETTINGS.ALLOW_FREE_FOR_ALL_DROP) ?? true;
+}
+
+/**
  * The dotted path (from an item's root) to its quantity, as configured for the
  * detected system. Empty when the system has no quantity concept configured.
  * @returns {string} The quantity path (e.g. "system.quantity"), or "".
