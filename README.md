@@ -2,6 +2,8 @@
 
 **Your characters carry torches, candles and lanterns. This module makes them actually light the way — in any system.**
 
+![Lighting a source from the Token HUD](docs/use-token-hud.gif)
+
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-Donate-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/mestredigital) [![More Modules](https://img.shields.io/badge/Foundry%20VTT-More%20Modules-red?style=for-the-badge&logo=gamepad)](https://mestredigital.online/pages/projetos-en)
 
 Turn any item in a character's backpack into a real light source. One click on the token, and the darkness pulls back.
