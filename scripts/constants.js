@@ -43,11 +43,15 @@ export const SETTINGS = {
  *   the GM placed by hand) and carries what is needed to light it again on a token
  *   ({sourceId, patternId, patternName, itemName, actorUuid, mode, expiresAtWorld,
  *   expiresAtReal}). Without it a dropped light is indistinguishable from scenery.
- * @type {{EFFECT_LIGHT: string, GROUND_LIGHT: string}}
+ * - `INTERACTIVE`: set on an AmbientLight the players may switch on and off from the
+ *   map. The GM sets it per light in the native light config; lights dropped by a
+ *   player get it automatically.
+ * @type {{EFFECT_LIGHT: string, GROUND_LIGHT: string, INTERACTIVE: string}}
  */
 export const FLAGS = {
   EFFECT_LIGHT: "light",
-  GROUND_LIGHT: "groundLight"
+  GROUND_LIGHT: "groundLight",
+  INTERACTIVE: "interactive"
 };
 
 /**

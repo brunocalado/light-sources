@@ -10,6 +10,7 @@ import { MODULE_ID, SETTINGS, SOCKET_EVENT, SYSTEM_PRESETS } from "./constants.j
 import { LightSourcesConfig } from "./light-sources-config.js";
 import { CompatibilityConfig } from "./compatibility-config.js";
 import { registerTokenHudHooks } from "./token-hud.js";
+import { registerInteractiveLightHooks } from "./interactive-lights.js";
 import { startExpiryTicker, sweepExpiredLights, handleSocketMessage } from "./light-manager.js";
 import { registerSources } from "./api.js";
 
@@ -96,3 +97,4 @@ Hooks.on("updateWorldTime", () => {
 });
 
 registerTokenHudHooks();
+registerInteractiveLightHooks();

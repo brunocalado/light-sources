@@ -119,6 +119,12 @@
       "NoGm": "No GM is connected to place the light. Ask a GM to log in and try again.",
       "NoItem": "{name} no longer carries {item}."
     },
+    "Interactive": {
+      "Legend": "Light Sources",
+      "Label": "Players Can Switch",
+      "Hint": "Show a control on the map that lets players turn this light on and off. They must move a token onto the light, or next to it, to reach the control.",
+      "OutOfReach": "You need to move closer to reach that light."
+    },
     "Chat": {
       "ExpiredTitle": "Light Burns Out",
       "Expired": "The {item} carried by {actor} burns out.",

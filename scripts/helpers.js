@@ -148,8 +148,10 @@ export function findMatchingItems(actor, source) {
 }
 
 /**
- * Find a light lying on the ground within reach of a token — the same square it
- * stands on, or one of the squares around it.
+ * Whether a token can reach a point on the canvas: the same square it stands on, or
+ * one of the squares around it. The module's one definition of "close enough to
+ * touch", shared by picking a light up off the ground and by working an interactive
+ * light's control on the map.
  *
  * Reach is delegated to the scene's own grid rather than measured by hand, so the
  * rule follows whatever grid the scene uses. Three core behaviours this relies on:
@@ -157,27 +159,33 @@ export function findMatchingItems(actor, source) {
  * the "standing on it" case has to be tested separately; on a square grid it honours
  * the scene's diagonal rule, narrowing to the four orthogonal neighbours when
  * diagonals are illegal; and on a gridless scene it always returns `false`, which
- * would make a pickup impossible, so distance falls back to one grid unit there.
+ * would put everything out of reach, so distance falls back to one grid unit there.
+ * @param {foundry.canvas.placeables.Token} token The token reaching out.
+ * @param {{x: number, y: number}} point The point being reached for.
+ * @returns {boolean} True when the point is within the token's reach.
+ */
+export function isWithinReach(token, point) {
+  const grid = canvas.grid;
+  if ( !token || !grid ) return false;
+
+  const origin = token.center;
+  if ( grid.isGridless ) return Math.hypot(point.x - origin.x, point.y - origin.y) <= grid.size;
+
+  const a = grid.getOffset(origin);
+  const b = grid.getOffset(point);
+  if ( (a.i === b.i) && (a.j === b.j) ) return true;
+  return grid.testAdjacency(origin, point);
+}
+
+/**
+ * Find a light lying on the ground within reach of a token.
  * @param {foundry.canvas.placeables.Token} token The token reaching for a light.
  * @returns {AmbientLightDocument|null} The dropped light in reach, or null.
  */
 export function findGroundLight(token) {
-  const grid = canvas.grid;
-  if ( !token || !grid ) return null;
-
-  const origin = token.center;
-  const inReach = light => {
-    const point = { x: light.x, y: light.y };
-    if ( grid.isGridless ) return Math.hypot(point.x - origin.x, point.y - origin.y) <= grid.size;
-    const a = grid.getOffset(origin);
-    const b = grid.getOffset(point);
-    if ( (a.i === b.i) && (a.j === b.j) ) return true;
-    return grid.testAdjacency(origin, point);
-  };
-
   for ( const light of (canvas.scene?.lights ?? []) ) {
     if ( !light.getFlag(MODULE_ID, FLAGS.GROUND_LIGHT) ) continue;
-    if ( inReach(light) ) return light;
+    if ( isWithinReach(token, { x: light.x, y: light.y }) ) return light;
   }
   return null;
 }

@@ -306,16 +306,22 @@ export async function dropLight(actor, source, pattern, token) {
     // tell a dropped light apart from scenery the GM placed by hand. The expiry
     // stamps carry over untouched: the flame goes on burning where it lies, so the
     // instant it gutters out does not move (see `sweepExpiredLights`).
-    flags: { [MODULE_ID]: { [FLAGS.GROUND_LIGHT]: {
-      sourceId: source.id,
-      patternId: pattern.id,
-      patternName: pattern.name,
-      itemName: source.name,
-      actorUuid: actor.uuid,
-      mode: active.mode,
-      expiresAtWorld: active.expiresAtWorld,
-      expiresAtReal: active.expiresAtReal
-    } } }
+    //
+    // A light you put down yourself is always yours to work: it gets the interactive
+    // control automatically, with no GM opt-in, unlike scenery lights.
+    flags: { [MODULE_ID]: {
+      [FLAGS.INTERACTIVE]: true,
+      [FLAGS.GROUND_LIGHT]: {
+        sourceId: source.id,
+        patternId: pattern.id,
+        patternName: pattern.name,
+        itemName: source.name,
+        actorUuid: actor.uuid,
+        mode: active.mode,
+        expiresAtWorld: active.expiresAtWorld,
+        expiresAtReal: active.expiresAtReal
+      }
+    } }
   });
   // Nothing reached the ground (no scene, or no GM to place it): stay silent rather
   // than announce a light that does not exist. `placeAmbientLight` reports the cause.
@@ -441,6 +447,51 @@ async function createAmbientLight(sceneId, lightData) {
 }
 
 /**
+ * Switch an AmbientLight on or off, delegating to the active GM when the current
+ * user lacks permission. `AmbientLightDocument#getUserLevel` hands every non-GM
+ * `NONE` outright, with no ownership to grant otherwise, so even flipping a single
+ * boolean has to go through the GM.
+ *
+ * "Off" is the document's native `hidden`: the light stops emitting and disappears
+ * for players, while the GM keeps seeing it dashed on the lighting layer.
+ * @param {AmbientLightDocument} light The light to switch.
+ * @returns {Promise<boolean>} True once switched, or handed to the active GM to
+ *   switch. Fire-and-forget for a player, like the other AmbientLight relays.
+ */
+export async function toggleAmbientLight(light) {
+  const sceneId = light?.parent?.id;
+  if ( !sceneId ) return false;
+  const hidden = !light.hidden;
+  if ( game.user.isGM ) return setAmbientLightHidden(sceneId, light.id, hidden);
+  if ( !game.users.activeGM ) {
+    ui.notifications.warn(game.i18n.localize("LIGHTSOURCES.Hud.NoGm"));
+    return false;
+  }
+  game.socket.emit(SOCKET_EVENT, { action: "toggleLight", sceneId, lightId: light.id, hidden });
+  return true;
+}
+
+/**
+ * Switch an AmbientLight on or off. Runs on a GM client — directly for a GM user, or
+ * on the active GM after a socket relay from a player.
+ *
+ * The target state is carried explicitly rather than toggled here so that two players
+ * clicking the same light at once converge on one outcome instead of flipping it back
+ * and forth.
+ * @param {string} sceneId The id of the scene holding the light.
+ * @param {string} lightId The id of the AmbientLight to switch.
+ * @param {boolean} hidden The state to apply.
+ * @returns {Promise<boolean>} True when the light was switched, false when the scene
+ *   or the light no longer exists.
+ */
+async function setAmbientLightHidden(sceneId, lightId, hidden) {
+  const scene = game.scenes.get(sceneId);
+  if ( !scene?.lights.has(lightId) ) return false;
+  await scene.updateEmbeddedDocuments("AmbientLight", [{ _id: lightId, hidden: !!hidden }]);
+  return true;
+}
+
+/**
  * Delete an AmbientLight document. Runs on a GM client — directly for a GM user,
  * or on the active GM after a socket relay from a player.
  * @param {string} sceneId The id of the scene holding the light.
@@ -471,6 +522,9 @@ export function handleSocketMessage(payload) {
       break;
     case "pickupLight":
       deleteAmbientLight(payload.sceneId, payload.lightId).catch(fail);
+      break;
+    case "toggleLight":
+      setAmbientLightHidden(payload.sceneId, payload.lightId, payload.hidden).catch(fail);
       break;
   }
 }

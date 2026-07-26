@@ -28,6 +28,7 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 * ✍️ **Register without an item.** No physical item yet, or want a source that exists by name alone? Click **Add by Name** in the config window to register one instantly — pairs naturally with Free for All.
 * 🪔 **Drop a light on the ground.** Light a source, then drop it — the burning light leaves your token and becomes an Ambient Light placed on the map at your token's feet. Walk away, and the torch stays behind on the floor, still burning down: leave it long enough and you'll come back to a torch that has gone out. Dropping costs nothing extra: it puts down the light you already lit. Works even for players; the module relays the request to the GM.
 * 🤲 **Pick it back up.** Changed your mind, or just came back for it? Walk a token onto the light you left behind — or onto any square beside it — and **Pick Up Light** appears in the flame menu. The torch returns to your hand still lit, carrying only the time it hasn't burned yet. Nothing is spent, because nothing needs to be: it's the same flame you put down, not a fresh torch off the sheet.
+* 💡 **Lights the players can switch.** Tick **Players Can Switch** on any light in the scene's own light configuration and a control appears over it on the map, much like a door's. Players walk a token up to the light and click to snuff it or light it again — a corridor of torches stops being scenery and becomes something a stealthy party can do something about. Lights a player dropped are theirs to work from the start, no GM tick required.
 * 🧩 **Works with any system.** Tell the module which item types are light sources, which actor types can use Free-for-All ones, and where an item's quantity lives — then it just works. Daggerheart comes preconfigured out of the box.
 * 📏 **Handy presets.** The radius and duration fields come with dropdown presets (10, 15, 20, 30, 60) so you can size a light — or a burn time — in a click instead of typing. Pick **Custom** whenever you want an exact value instead.
 * 🗺️ **The light follows the character.** It stays with them across scenes, and blowing it out restores exactly the token lighting they had before.
@@ -64,6 +65,14 @@ There is also one world setting under **Game Settings → Configure Settings →
 
 Tip: select a token on the canvas while you edit — you'll watch the light change on the map in real time.
 
+### For the GM — hand a light over to the players
+
+Any light already placed on your scene can be made interactive. Open it on the **Lighting** layer to bring up Foundry's own light configuration, and tick **Players Can Switch** at the bottom of the **Basic** tab.
+
+From then on a small control appears over that light for everyone who can see it. A player has to walk a token onto the light — or onto a square beside it — before the control responds, so putting out the torch at the end of the hall means walking down the hall. This is what makes it a stealth decision rather than a free action.
+
+A light that is switched off uses Foundry's native **hidden** state, so you'll see it dashed on the Lighting layer while it's out, and you can always flip it back yourself. Lights the players drop on the ground get this treatment automatically — those are theirs, and need no tick from you.
+
 ### For the players — light it up
 
 1. Make sure the item (a Torch, a Lantern...) is in your character's inventory — however your system normally hands out items. (Skip this if the GM marked the source "Free for All" and your character's type is eligible — then it's available automatically.)
@@ -84,6 +93,8 @@ To put it out, open the same menu and click **Extinguish Light**. If it burns ou
 **Pick a light back up**: walk back to a torch you left on the floor and select your token. If it's standing on the light — or on any of the squares around it — **Pick Up Light** appears at the top of the flame menu. Click it and the flame comes back to your token with the time it has left on it. Like dropping, this costs nothing: you're picking up the torch you put down, not spending a new one.
 
 Do come back for it, though. A torch on the floor is still burning, and if you leave it too long you'll return to find it has gone out.
+
+**Switch a light on or off**: some lights on the map can be worked directly — any torch you dropped yourself, plus any scenery light your GM has opened up. Those show a small light control on the map. Move your token onto the light or next to it and click the control to snuff it or light it again. From further away the control stays faded and clicking it just tells you to get closer: you can only put out a light you've actually reached.
 
 ## 🔌 For Developers
 

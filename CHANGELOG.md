@@ -1,3 +1,12 @@
+# 0.0.5
+
+### Added
+
+* **Lights the players can switch.** Tick **Players Can Switch** on any light in the scene's own light configuration and a control appears over it on the map, much like a door's. Players walk a token up to the light and click to snuff it or light it again — a corridor of torches becomes something a stealthy party can do something about. The control has to be reached: a token must be standing on the light or on a square beside it, so putting out the torch at the end of the hall means going down the hall.
+* **Dropped lights are interactive from the start.** A torch a player put on the floor is theirs to work, with no GM opt-in — they can walk back and snuff it, light it again, or pick it up entirely.
+
+
+
 # 0.0.4
 
 ### Added
