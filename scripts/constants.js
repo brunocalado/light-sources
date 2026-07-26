@@ -35,14 +35,28 @@ export const SETTINGS = {
 };
 
 /**
- * Flag keys stored under the MODULE_ID scope. `EFFECT_LIGHT` marks the
- * ActiveEffect this module creates to drive a token's light, and carries its
- * bookkeeping payload ({sourceId, itemName, mode, expiresAtWorld, expiresAtReal}).
- * @type {{EFFECT_LIGHT: string}}
+ * Flag keys stored under the MODULE_ID scope.
+ * - `EFFECT_LIGHT`: marks the ActiveEffect this module creates to drive a token's
+ *   light, and carries its bookkeeping payload ({sourceId, itemName, mode,
+ *   expiresAtWorld, expiresAtReal}).
+ * - `GROUND_LIGHT`: marks an AmbientLight dropped by an actor (as opposed to one
+ *   the GM placed by hand) and carries what is needed to light it again on a token
+ *   ({sourceId, patternId, patternName, itemName, actorUuid, mode, expiresAtWorld,
+ *   expiresAtReal}). Without it a dropped light is indistinguishable from scenery.
+ * @type {{EFFECT_LIGHT: string, GROUND_LIGHT: string}}
  */
 export const FLAGS = {
-  EFFECT_LIGHT: "light"
+  EFFECT_LIGHT: "light",
+  GROUND_LIGHT: "groundLight"
 };
+
+/**
+ * The module's socket channel. Foundry namespaces package sockets as
+ * `module.<id>`, and the manifest must declare `"socket": true` for the server to
+ * relay them.
+ * @type {string}
+ */
+export const SOCKET_EVENT = `module.${MODULE_ID}`;
 
 /**
  * How a light source counts down its duration.

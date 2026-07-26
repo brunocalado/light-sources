@@ -101,6 +101,24 @@
       color: var(--color-text-secondary, #c0c0b0);
     }
 
+    /* Pickup sits above the source rows and is about the map rather than the
+       inventory, so it is set apart with the accent used by the drop control. */
+    .ls-pickup {
+      border-color: var(--light-sources-accent);
+      color: var(--light-sources-accent);
+    }
+
+    .ls-pickup > i {
+      flex: none;
+      width: 28px;
+      text-align: center;
+    }
+
+    .ls-pickup:hover {
+      background: var(--light-sources-accent);
+      color: #1b1a17;
+    }
+
     .ls-drop {
       flex: none;
       display: inline-flex;

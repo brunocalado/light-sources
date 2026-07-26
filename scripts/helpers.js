@@ -6,7 +6,7 @@
  * it under the terms of the GNU General Public License version 3.
  */
 
-import { MODULE_ID, SETTINGS, CHAT_CARD_BG, CHAT_CARD_ACCENT } from "./constants.js";
+import { MODULE_ID, SETTINGS, FLAGS, CHAT_CARD_BG, CHAT_CARD_ACCENT } from "./constants.js";
 
 /**
  * Build a light pattern: a uniquely-identified, named light configuration. A
@@ -148,11 +148,48 @@ export function findMatchingItems(actor, source) {
 }
 
 /**
+ * Find a light lying on the ground within reach of a token — the same square it
+ * stands on, or one of the squares around it.
+ *
+ * Reach is delegated to the scene's own grid rather than measured by hand, so the
+ * rule follows whatever grid the scene uses. Three core behaviours this relies on:
+ * `testAdjacency` compares grid offsets and is `false` for the *same* offset, so
+ * the "standing on it" case has to be tested separately; on a square grid it honours
+ * the scene's diagonal rule, narrowing to the four orthogonal neighbours when
+ * diagonals are illegal; and on a gridless scene it always returns `false`, which
+ * would make a pickup impossible, so distance falls back to one grid unit there.
+ * @param {foundry.canvas.placeables.Token} token The token reaching for a light.
+ * @returns {AmbientLightDocument|null} The dropped light in reach, or null.
+ */
+export function findGroundLight(token) {
+  const grid = canvas.grid;
+  if ( !token || !grid ) return null;
+
+  const origin = token.center;
+  const inReach = light => {
+    const point = { x: light.x, y: light.y };
+    if ( grid.isGridless ) return Math.hypot(point.x - origin.x, point.y - origin.y) <= grid.size;
+    const a = grid.getOffset(origin);
+    const b = grid.getOffset(point);
+    if ( (a.i === b.i) && (a.j === b.j) ) return true;
+    return grid.testAdjacency(origin, point);
+  };
+
+  for ( const light of (canvas.scene?.lights ?? []) ) {
+    if ( !light.getFlag(MODULE_ID, FLAGS.GROUND_LIGHT) ) continue;
+    if ( inReach(light) ) return light;
+  }
+  return null;
+}
+
+/**
  * Build the ChatMessage data announcing a light event, wrapping the text in the
  * module's standard chat card and speaking as the actor involved. Returns the
  * creation data rather than creating the document, so callers can batch several
  * announcements into one operation (see `sweepExpiredLights` in `light-manager.js`).
- * @param {Actor} actor The actor the message speaks for.
+ * @param {Actor} [actor] The actor the message speaks for. May be omitted for a
+ *   light with no actor left to speak for it (a torch that burned out on the ground
+ *   after its owner's token was removed), which yields a generic speaker.
  * @param {string} title The card's header text, already localized.
  * @param {string} message The card's body text, already localized.
  * @returns {object} ChatMessage creation data ({content, speaker}).

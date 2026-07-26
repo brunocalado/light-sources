@@ -112,6 +112,10 @@
       "Extinguish": "Extinguish Light",
       "Drop": "Drop",
       "DropTooltip": "Drop this light on the ground as an Ambient Light",
+      "Pickup": "Pick Up Light",
+      "PickupTooltip": "Take this light off the ground and carry it again",
+      "PickupSourceGone": "The {item} was picked up, but its light source is no longer configured, so it could not be lit again.",
+      "PickupBurnedOut": "The {item} had already burned out before it was picked up.",
       "NoGm": "No GM is connected to place the light. Ask a GM to log in and try again.",
       "NoItem": "{name} no longer carries {item}."
     },
@@ -123,6 +127,10 @@
       "LitPattern": "{actor} lights {item} ({pattern}).",
       "DroppedTitle": "Light Dropped",
       "Dropped": "{actor} drops {item} on the ground.",
+      "PickedUpTitle": "Light Picked Up",
+      "PickedUp": "{actor} picks {item} back up off the ground.",
+      "GroundExpiredTitle": "Light Burns Out",
+      "GroundExpired": "The {item} left on the ground burns out.",
       "DragHint": "Drag onto an Actor sheet to add it to their inventory."
     }
   }

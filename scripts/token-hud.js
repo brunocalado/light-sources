@@ -7,8 +7,8 @@
  */
 
 import { MODULE_ID, DURATION_MODES } from "./constants.js";
-import { getSources, findMatchingItems, getActorTypes, getAllowFreeForAllDrop } from "./helpers.js";
-import { getActiveLight, activateLight, deactivateLight, dropLight } from "./light-manager.js";
+import { getSources, findMatchingItems, getActorTypes, getAllowFreeForAllDrop, findGroundLight } from "./helpers.js";
+import { getActiveLight, activateLight, deactivateLight, dropLight, pickupLight } from "./light-manager.js";
 
 /**
  * Register the Token HUD integration hooks.
@@ -25,7 +25,8 @@ export function registerTokenHudHooks() {
  * "free for all" source available and is of an actor type enabled in the
  * compatibility settings (see the GM config's Actors tab), or currently has
  * an active light (so it can be put out regardless of actor type, even after
- * the last item was consumed or removed).
+ * the last item was consumed or removed), or is standing on or beside a light
+ * someone dropped on the ground (so it can be picked back up).
  * @param {foundry.applications.hud.TokenHUD} hud The rendered HUD application.
  * @param {HTMLElement} html The HUD root element.
  */
@@ -42,14 +43,18 @@ function onRenderTokenHUD(hud, html) {
     // carries the extinguish/drop controls for the light already burning.
     .filter(entry => (entry.items.length > 0) || (entry.source.freeForAll && freeForAllAllowed)
       || (entry.source.id === active?.sourceId));
-  if ( !entries.length && !active ) return;
+  // A ground light on its own is enough to open the HUD: an actor who lit its last
+  // torch and put it down carries no item and has no active light, yet must still
+  // be able to reach down and take it back.
+  const ground = findGroundLight(hud.object);
+  if ( !entries.length && !active && !ground ) return;
 
   // Wrap the toggle and palette together so the palette is positioned relative
   // to the button (not the whole HUD), keeping it from overlapping the HUD's
   // top attribute row.
   const wrapper = document.createElement("div");
   wrapper.classList.add(MODULE_ID, "ls-control");
-  const palette = buildPalette(hud, actor, entries, active);
+  const palette = buildPalette(hud, actor, entries, active, ground);
   const button = buildToggleButton(palette, active);
   wrapper.append(button, palette);
   (html.querySelector(".col.left") ?? html).appendChild(wrapper);
@@ -118,11 +123,16 @@ function buildToggleButton(palette, active) {
  * @param {Actor} actor The token's actor.
  * @param {Array<{source: object, items: Item[]}>} entries Registered sources present in the inventory.
  * @param {object|null} active The actor's active light flag, if any.
+ * @param {AmbientLightDocument|null} ground A dropped light within the token's reach, if any.
  * @returns {HTMLDivElement} The palette element.
  */
-function buildPalette(hud, actor, entries, active) {
+function buildPalette(hud, actor, entries, active, ground) {
   const palette = document.createElement("div");
   palette.classList.add(MODULE_ID, "ls-palette");
+
+  // First in the palette: reclaiming a light already on the ground is a reply to
+  // something the player can see right there, unlike the inventory rows below it.
+  if ( ground ) palette.append(buildPickupButton(hud, actor, palette, ground));
 
   for ( const { source } of entries ) {
     // A lone pattern is the implicit default and needs no secondary label.
@@ -202,6 +212,46 @@ function buildPalette(hud, actor, entries, active) {
   }
 
   return palette;
+}
+
+/**
+ * Build the "Pick Up Light" control: takes a light off the ground and lights it on
+ * the token again, spending nothing (see `pickupLight` in `light-manager.js`).
+ *
+ * A full-width row of its own rather than a secondary control on a source row: the
+ * light being reclaimed is on the map, not in the inventory, and may well belong to
+ * a source this actor no longer carries any item for. That also sidesteps the
+ * nesting trap `buildDropButton` has to work around — there is no entry button to
+ * sit inside.
+ * @param {foundry.applications.hud.TokenHUD} hud The HUD application (re-rendered after the pickup).
+ * @param {Actor} actor The token's actor.
+ * @param {HTMLElement} palette The palette element, closed before the pickup runs.
+ * @param {AmbientLightDocument} ground The dropped light within reach.
+ * @returns {HTMLButtonElement} The pickup control button.
+ */
+function buildPickupButton(hud, actor, palette, ground) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.classList.add("ls-entry", "ls-pickup");
+  button.dataset.tooltip = game.i18n.localize("LIGHTSOURCES.Hud.PickupTooltip");
+  button.setAttribute("aria-label", game.i18n.localize("LIGHTSOURCES.Hud.PickupTooltip"));
+
+  const icon = document.createElement("i");
+  icon.className = "fa-solid fa-hand-holding";
+  icon.inert = true;
+
+  const label = document.createElement("span");
+  label.className = "ls-label";
+  label.textContent = game.i18n.localize("LIGHTSOURCES.Hud.Pickup");
+
+  button.append(icon, label);
+  button.addEventListener("click", async event => {
+    event.preventDefault();
+    palette.classList.remove("ls-open");
+    await pickupLight(actor, ground);
+    hud.render();
+  });
+  return button;
 }
 
 /**

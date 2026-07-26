@@ -6,7 +6,7 @@
  * it under the terms of the GNU General Public License version 3.
  */
 
-import { MODULE_ID, SETTINGS, SYSTEM_PRESETS } from "./constants.js";
+import { MODULE_ID, SETTINGS, SOCKET_EVENT, SYSTEM_PRESETS } from "./constants.js";
 import { LightSourcesConfig } from "./light-sources-config.js";
 import { CompatibilityConfig } from "./compatibility-config.js";
 import { registerTokenHudHooks } from "./token-hud.js";
@@ -76,8 +76,9 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", () => {
   startExpiryTicker();
-  // Players relay GM-only work (placing dropped AmbientLights) over this socket.
-  game.socket.on(`module.${MODULE_ID}`, handleSocketMessage);
+  // Players relay GM-only work (placing and removing dropped AmbientLights) over
+  // this socket.
+  game.socket.on(SOCKET_EVENT, handleSocketMessage);
 
   // Public API for external systems/modules to register light sources without
   // the GM drag-and-drop UI. Exposed both via Foundry's formal module.api and a

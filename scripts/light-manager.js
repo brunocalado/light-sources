@@ -6,8 +6,10 @@
  * it under the terms of the GNU General Public License version 3.
  */
 
-import { MODULE_ID, FLAGS, DURATION_MODES, LIGHT_CHANGE_PRIORITY, EXPIRY_CHECK_INTERVAL_MS } from "./constants.js";
-import { findMatchingItems, buildLightMessage, getItemQuantity, getQuantityPath } from "./helpers.js";
+import {
+  MODULE_ID, FLAGS, SOCKET_EVENT, DURATION_MODES, LIGHT_CHANGE_PRIORITY, EXPIRY_CHECK_INTERVAL_MS
+} from "./constants.js";
+import { findMatchingItems, buildLightMessage, getItemQuantity, getQuantityPath, getSources } from "./helpers.js";
 
 /**
  * Interval id of the real-time expiry ticker, so it is only ever started once
@@ -86,6 +88,99 @@ function buildLightChanges(pattern) {
 }
 
 /**
+ * Resolve when a freshly lit light will burn out, as absolute stamps.
+ *
+ * Absolute rather than "minutes remaining" so the deadline survives the flame
+ * changing hands — a light dropped on the ground and picked back up keeps counting
+ * toward the same instant it always would have (see `dropLight` / `pickupLight`).
+ * A source with no configured duration burns until it is put out and stores no
+ * stamp at all.
+ * @param {object} source The registered light source definition.
+ * @returns {{mode: string, expiresAtWorld: number|null, expiresAtReal: number|null}} The timing payload.
+ */
+function buildTiming(source) {
+  const mode = source.durationMode === DURATION_MODES.REAL ? DURATION_MODES.REAL : DURATION_MODES.WORLD;
+  const minutes = source.durationMinutes > 0 ? source.durationMinutes : 0;
+  return {
+    mode,
+    expiresAtWorld: (mode === DURATION_MODES.WORLD) && minutes ? game.time.worldTime + (minutes * 60) : null,
+    expiresAtReal: (mode === DURATION_MODES.REAL) && minutes ? Date.now() + (minutes * 60000) : null
+  };
+}
+
+/**
+ * Test whether a light's bookkeeping payload says it has burned out. Shared by the
+ * expiry sweep and by pickup, so a light lying on the ground and a light burning on
+ * a token go out on exactly the same rule.
+ * @param {object} flag A bookkeeping payload ({mode, expiresAtWorld, expiresAtReal}).
+ * @param {number} now The current `Date.now()` timestamp.
+ * @returns {boolean} True when the light has burned out.
+ */
+function isExpired(flag, now) {
+  return flag.mode === DURATION_MODES.REAL
+    ? (flag.expiresAtReal != null) && (flag.expiresAtReal <= now)
+    : (flag.expiresAtWorld != null) && (game.time.worldTime >= flag.expiresAtWorld);
+}
+
+/**
+ * Create the ActiveEffect that overrides a token's light, replacing any light
+ * effect already on the actor. Split out from `activateLight` because lighting a
+ * source and reclaiming one off the ground differ only in where the timing comes
+ * from: activation starts a fresh clock, pickup restores a clock already part
+ * spent. Neither consumption nor the chat announcement belongs here — both differ
+ * between the two callers.
+ * @param {Actor} actor The actor to light.
+ * @param {object} source The registered light source definition.
+ * @param {object} pattern The light pattern ({id, name, light}) to light.
+ * @param {{mode: string, expiresAtWorld: number|null, expiresAtReal: number|null}} timing
+ *   When the light burns out, as absolute stamps (see `buildTiming`).
+ * @returns {Promise<void>}
+ */
+async function createLightEffect(actor, source, pattern, timing) {
+  // Only one light effect at a time: remove any previous one (switching sources / re-lighting).
+  const stale = actor.effects.filter(e => e.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT)).map(e => e.id);
+  if ( stale.length ) await actor.deleteEmbeddedDocuments("ActiveEffect", stale);
+
+  // World-time lights use the effect's native duration so the light reverts the
+  // instant the game clock passes the expiry, on every client. Real-time lights
+  // keep an indefinite native duration (advancing the clock must not affect them)
+  // and are extinguished by the real-time ticker. `expiry: null` makes the native
+  // duration expire purely on elapsed time rather than on a combat turn boundary.
+  // The length is derived from the absolute stamp rather than from the source's
+  // configured minutes, so a light picked back up finishes only what it has left.
+  // Counted in seconds, not minutes: `duration.value` is an integer field, and what
+  // is left of a part-spent light is rarely a whole number of minutes.
+  const remaining = timing.expiresAtWorld != null ? timing.expiresAtWorld - game.time.worldTime : null;
+  const duration = remaining != null
+    ? { value: Math.max(0, Math.round(remaining)), units: "seconds", expiry: null }
+    : { value: null };
+
+  // This effect is system-agnostic: every piece below is core Foundry v14, not
+  // system-specific. `token.light.*` is native token-targeting (core strips
+  // the `token.` prefix and applies it to the TokenDocument); `type: "base"` is
+  // CONST.BASE_DOCUMENT_TYPE, for which core itself registers the data model
+  // (CONFIG.ActiveEffect.dataModels.base = ActiveEffectTypeDataModel) defining
+  // `system.changes`. The change shape validates on a vanilla-core world and on
+  // any system that doesn't hostilely narrow the base changes schema (some
+  // systems reshape it but keep the same shape + the `override` mode).
+  await actor.createEmbeddedDocuments("ActiveEffect", [{
+    name: source.name,
+    img: source.img,
+    type: "base",
+    transfer: false,
+    duration,
+    system: { changes: buildLightChanges(pattern) },
+    flags: { [MODULE_ID]: { [FLAGS.EFFECT_LIGHT]: {
+      sourceId: source.id,
+      patternId: pattern.id,
+      patternName: pattern.name,
+      itemName: source.name,
+      ...timing
+    } } }
+  }]);
+}
+
+/**
  * Activate a light source on an Actor: optionally consume one item, then create
  * an ActiveEffect that overrides the token's light. The effect lives on the
  * Actor, so its light applies to every token of that actor across all scenes and
@@ -129,47 +224,7 @@ export async function activateLight(actor, source, pattern) {
     }
   }
 
-  // Only one light effect at a time: remove any previous one (switching sources / re-lighting).
-  const stale = actor.effects.filter(e => e.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT)).map(e => e.id);
-  if ( stale.length ) await actor.deleteEmbeddedDocuments("ActiveEffect", stale);
-
-  const mode = source.durationMode === DURATION_MODES.REAL ? DURATION_MODES.REAL : DURATION_MODES.WORLD;
-  const minutes = source.durationMinutes > 0 ? source.durationMinutes : 0;
-  const worldExpiry = (mode === DURATION_MODES.WORLD) && minutes;
-
-  // World-time lights use the effect's native duration so the light reverts the
-  // instant the game clock passes the expiry, on every client. Real-time lights
-  // keep an indefinite native duration (advancing the clock must not affect them)
-  // and are extinguished by the real-time ticker. `expiry: null` makes the native
-  // duration expire purely on elapsed time rather than on a combat turn boundary.
-  const duration = worldExpiry ? { value: minutes, units: "minutes", expiry: null } : { value: null };
-  const flagValue = {
-    sourceId: source.id,
-    patternId: pattern.id,
-    patternName: pattern.name,
-    itemName: source.name,
-    mode,
-    expiresAtWorld: worldExpiry ? game.time.worldTime + (minutes * 60) : null,
-    expiresAtReal: (mode === DURATION_MODES.REAL) && minutes ? Date.now() + (minutes * 60000) : null
-  };
-
-  // This effect is system-agnostic: every piece below is core Foundry v14, not
-  // system-specific. `token.light.*` is native token-targeting (core strips
-  // the `token.` prefix and applies it to the TokenDocument); `type: "base"` is
-  // CONST.BASE_DOCUMENT_TYPE, for which core itself registers the data model
-  // (CONFIG.ActiveEffect.dataModels.base = ActiveEffectTypeDataModel) defining
-  // `system.changes`. The change shape validates on a vanilla-core world and on
-  // any system that doesn't hostilely narrow the base changes schema (some
-  // systems reshape it but keep the same shape + the `override` mode).
-  await actor.createEmbeddedDocuments("ActiveEffect", [{
-    name: source.name,
-    img: source.img,
-    type: "base",
-    transfer: false,
-    duration,
-    system: { changes: buildLightChanges(pattern) },
-    flags: { [MODULE_ID]: { [FLAGS.EFFECT_LIGHT]: flagValue } }
-  }]);
+  await createLightEffect(actor, source, pattern, buildTiming(source));
 
   // Name the pattern only when the source has more than one: a lone pattern is
   // the implicit default and its name carries no information (it may be empty).
@@ -217,6 +272,10 @@ async function switchPattern(actor, effect, pattern) {
  * never pays at all. Re-lighting afterwards is a deliberate, manual action.
  * The light is placed at the token's center using the given pattern's light data,
  * and announced in chat once it is down.
+ *
+ * The placed AmbientLight carries a `GROUND_LIGHT` flag recording which source and
+ * pattern it came from and when it burns out, which is what lets it be picked back
+ * up later (see `pickupLight`) and what lets the expiry sweep put it out.
  * @param {Actor} actor The actor dropping the light.
  * @param {object} source The registered light source definition. Must be the source
  *   of the actor's currently active light — dropping is a no-op otherwise.
@@ -239,7 +298,25 @@ export async function dropLight(actor, source, pattern, token) {
   // AmbientLight documents anchor on their center point, so drop the light at the
   // token's center rather than its top-left origin (token.x / token.y).
   const { x, y } = token.center;
-  const placed = await placeAmbientLight(canvas.scene?.id, { x, y, config: buildLightData(pattern) });
+  const placed = await placeAmbientLight(canvas.scene?.id, {
+    x,
+    y,
+    config: buildLightData(pattern),
+    // Everything needed to light this same flame again on a token, plus enough to
+    // tell a dropped light apart from scenery the GM placed by hand. The expiry
+    // stamps carry over untouched: the flame goes on burning where it lies, so the
+    // instant it gutters out does not move (see `sweepExpiredLights`).
+    flags: { [MODULE_ID]: { [FLAGS.GROUND_LIGHT]: {
+      sourceId: source.id,
+      patternId: pattern.id,
+      patternName: pattern.name,
+      itemName: source.name,
+      actorUuid: actor.uuid,
+      mode: active.mode,
+      expiresAtWorld: active.expiresAtWorld,
+      expiresAtReal: active.expiresAtReal
+    } } }
+  });
   // Nothing reached the ground (no scene, or no GM to place it): stay silent rather
   // than announce a light that does not exist. `placeAmbientLight` reports the cause.
   if ( !placed ) return;
@@ -254,11 +331,65 @@ export async function dropLight(actor, source, pattern, token) {
 }
 
 /**
+ * Take a light back off the ground and light it on an Actor again: the flame moves
+ * from the ground back to the token, the reverse of `dropLight`.
+ *
+ * Deliberately *not* the reverse of activation. An item is spent when a light is
+ * lit, never when it is dropped, so picking one up returns no item and costs none —
+ * it re-lights the very flame that was put down, with whatever burn time it has
+ * left. Refunding quantity instead would mint a free torch on every drop/pickup loop.
+ *
+ * The light always leaves the ground, even when it cannot be re-lit (its source was
+ * deleted from the config meanwhile, or it burned out before anyone came back for
+ * it). Leaving it behind would strand a light the HUD keeps offering and nothing can
+ * ever claim.
+ * @param {Actor} actor The actor picking the light up.
+ * @param {AmbientLightDocument} light The dropped light being reclaimed. Must carry
+ *   a `GROUND_LIGHT` flag — a light the GM placed by hand is a no-op.
+ * @returns {Promise<void>}
+ */
+export async function pickupLight(actor, light) {
+  const ground = light?.getFlag(MODULE_ID, FLAGS.GROUND_LIGHT);
+  if ( !ground ) return;
+
+  const removed = await removeAmbientLight(light.parent?.id, light.id);
+  // Nothing left the ground (no GM to remove it): don't hand the actor a second
+  // copy of a flame still lying on the map. `removeAmbientLight` reports the cause.
+  if ( !removed ) return;
+
+  const source = getSources().find(s => s.id === ground.sourceId);
+  const pattern = source?.patterns?.find(p => p.id === ground.patternId);
+  if ( !source || !pattern ) {
+    ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Hud.PickupSourceGone", { item: ground.itemName }));
+    return;
+  }
+
+  if ( isExpired(ground, Date.now()) ) {
+    ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Hud.PickupBurnedOut", { item: ground.itemName }));
+    return;
+  }
+
+  await createLightEffect(actor, source, pattern, {
+    mode: ground.mode,
+    expiresAtWorld: ground.expiresAtWorld,
+    expiresAtReal: ground.expiresAtReal
+  });
+
+  await ChatMessage.implementation.createDocuments([
+    buildLightMessage(
+      actor,
+      game.i18n.localize("LIGHTSOURCES.Chat.PickedUpTitle"),
+      game.i18n.format("LIGHTSOURCES.Chat.PickedUp", { actor: actor.name, item: source.name })
+    )
+  ]);
+}
+
+/**
  * Place an AmbientLight on a scene, delegating to the active GM when the current
  * user lacks permission. Foundry only lets a GM create AmbientLight documents, so
  * a non-GM caller hands the request off over the module socket.
  * @param {string} sceneId The id of the scene to place the light on.
- * @param {object} lightData The AmbientLight creation data ({x, y, config}).
+ * @param {object} lightData The AmbientLight creation data ({x, y, config, flags}).
  * @returns {Promise<boolean>} True once the light is placed, or handed to the active
  *   GM to place. The relay is fire-and-forget, so a player only ever learns that the
  *   request was accepted — not that the document was created.
@@ -270,7 +401,27 @@ async function placeAmbientLight(sceneId, lightData) {
     ui.notifications.warn(game.i18n.localize("LIGHTSOURCES.Hud.NoGm"));
     return false;
   }
-  game.socket.emit(`module.${MODULE_ID}`, { action: "dropLight", sceneId, lightData });
+  game.socket.emit(SOCKET_EVENT, { action: "dropLight", sceneId, lightData });
+  return true;
+}
+
+/**
+ * Remove an AmbientLight from a scene, delegating to the active GM when the current
+ * user lacks permission. Mirror of `placeAmbientLight`: AmbientLight is GM-only to
+ * delete just as it is to create, so a player hands the request off over the socket.
+ * @param {string} sceneId The id of the scene holding the light.
+ * @param {string} lightId The id of the AmbientLight to remove.
+ * @returns {Promise<boolean>} True once the light is removed, or handed to the active
+ *   GM to remove. Fire-and-forget for a player, exactly like `placeAmbientLight`.
+ */
+async function removeAmbientLight(sceneId, lightId) {
+  if ( !sceneId || !lightId ) return false;
+  if ( game.user.isGM ) return deleteAmbientLight(sceneId, lightId);
+  if ( !game.users.activeGM ) {
+    ui.notifications.warn(game.i18n.localize("LIGHTSOURCES.Hud.NoGm"));
+    return false;
+  }
+  game.socket.emit(SOCKET_EVENT, { action: "pickupLight", sceneId, lightId });
   return true;
 }
 
@@ -278,7 +429,7 @@ async function placeAmbientLight(sceneId, lightData) {
  * Create the AmbientLight document. Runs on a GM client — directly for a GM user,
  * or on the active GM after a socket relay from a player.
  * @param {string} sceneId The id of the scene to place the light on.
- * @param {object} lightData The AmbientLight creation data ({x, y, config}).
+ * @param {object} lightData The AmbientLight creation data ({x, y, config, flags}).
  * @returns {Promise<boolean>} True when the light was created, false when the scene
  *   no longer exists.
  */
@@ -286,6 +437,21 @@ async function createAmbientLight(sceneId, lightData) {
   const scene = game.scenes.get(sceneId);
   if ( !scene ) return false;
   await scene.createEmbeddedDocuments("AmbientLight", [lightData]);
+  return true;
+}
+
+/**
+ * Delete an AmbientLight document. Runs on a GM client — directly for a GM user,
+ * or on the active GM after a socket relay from a player.
+ * @param {string} sceneId The id of the scene holding the light.
+ * @param {string} lightId The id of the AmbientLight to delete.
+ * @returns {Promise<boolean>} True when the light was deleted, false when the scene
+ *   or the light no longer exists (two players racing for the same dropped light).
+ */
+async function deleteAmbientLight(sceneId, lightId) {
+  const scene = game.scenes.get(sceneId);
+  if ( !scene?.lights.has(lightId) ) return false;
+  await scene.deleteEmbeddedDocuments("AmbientLight", [lightId]);
   return true;
 }
 
@@ -298,9 +464,14 @@ async function createAmbientLight(sceneId, lightData) {
  */
 export function handleSocketMessage(payload) {
   if ( !payload || (game.users.activeGM !== game.user) ) return;
-  if ( payload.action === "dropLight" ) {
-    createAmbientLight(payload.sceneId, payload.lightData)
-      .catch(err => console.error(`${MODULE_ID} | Drop light relay failed`, err));
+  const fail = err => console.error(`${MODULE_ID} | Socket relay failed (${payload.action})`, err);
+  switch ( payload.action ) {
+    case "dropLight":
+      createAmbientLight(payload.sceneId, payload.lightData).catch(fail);
+      break;
+    case "pickupLight":
+      deleteAmbientLight(payload.sceneId, payload.lightId).catch(fail);
+      break;
   }
 }
 
@@ -341,27 +512,27 @@ function collectExpired(actor, now) {
   for ( const effect of actor.effects ) {
     const flag = effect.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT);
     if ( !flag ) continue;
-    const isExpired = flag.mode === DURATION_MODES.REAL
-      ? (flag.expiresAtReal != null) && (flag.expiresAtReal <= now)
-      : (flag.expiresAtWorld != null) && (game.time.worldTime >= flag.expiresAtWorld);
-    if ( isExpired ) expired.push({ actor, id: effect.id, itemName: flag.itemName });
+    if ( isExpired(flag, now) ) expired.push({ actor, id: effect.id, itemName: flag.itemName });
   }
   return expired;
 }
 
 /**
- * Find every actor whose light has burned out and extinguish it. Runs only on
- * the active GM client, so it works regardless of whether the owning player is
- * connected. Triggered both by the real-time ticker (for real-time lights) and
- * by the `updateWorldTime` hook (for in-game-time lights). Expired lights are
+ * Find every light that has burned out and put it out — both the ones still
+ * burning on a token and the ones lying on the ground where someone dropped them.
+ * Runs only on the active GM client, so it works regardless of whether the owning
+ * player is connected. Triggered both by the real-time ticker (for real-time lights)
+ * and by the `updateWorldTime` hook (for in-game-time lights). Expired lights are
  * deleted and announced in chat; they are never re-lit or re-consumed.
  * @returns {Promise<void>}
  */
 export async function sweepExpiredLights() {
   if ( game.users.activeGM !== game.user ) return;
   const now = Date.now();
-  const expired = [];
+  const messages = [];
 
+  // Lights burning on a token.
+  const expired = [];
   for ( const actor of game.actors ) expired.push(...collectExpired(actor, now));
 
   // Unlinked tokens keep their effect on a synthetic actor, not in game.actors.
@@ -372,8 +543,6 @@ export async function sweepExpiredLights() {
     }
   }
 
-  if ( !expired.length ) return;
-
   // Group deletions per actor (embedded documents have distinct parents).
   const byActor = new Map();
   for ( const { actor, id } of expired ) {
@@ -382,11 +551,34 @@ export async function sweepExpiredLights() {
   }
   for ( const [actor, ids] of byActor ) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
 
-  await ChatMessage.implementation.createDocuments(expired.map(({ actor, itemName }) => buildLightMessage(
+  messages.push(...expired.map(({ actor, itemName }) => buildLightMessage(
     actor,
     game.i18n.localize("LIGHTSOURCES.Chat.ExpiredTitle"),
     game.i18n.format("LIGHTSOURCES.Chat.Expired", { actor: actor.name, item: itemName })
   )));
+
+  // Lights lying on the ground burn on the very clock they had on the token (their
+  // expiry stamps carried over at drop time), so they gutter out here too rather
+  // than lighting the scene forever. Scenery the GM placed by hand has no flag and
+  // is never touched.
+  for ( const scene of game.scenes ) {
+    const burnedOut = [];
+    for ( const light of scene.lights ) {
+      const flag = light.getFlag(MODULE_ID, FLAGS.GROUND_LIGHT);
+      if ( flag && isExpired(flag, now) ) burnedOut.push({ light, flag });
+    }
+    if ( !burnedOut.length ) continue;
+    await scene.deleteEmbeddedDocuments("AmbientLight", burnedOut.map(({ light }) => light.id));
+    messages.push(...burnedOut.map(({ flag }) => buildLightMessage(
+      // The actor is only the speaker here; a dropped light outlives its owner's
+      // token being deleted, so a missing actor just yields a generic speaker.
+      foundry.utils.fromUuidSync(flag.actorUuid) ?? undefined,
+      game.i18n.localize("LIGHTSOURCES.Chat.GroundExpiredTitle"),
+      game.i18n.format("LIGHTSOURCES.Chat.GroundExpired", { item: flag.itemName })
+    )));
+  }
+
+  if ( messages.length ) await ChatMessage.implementation.createDocuments(messages);
 }
 
 /**

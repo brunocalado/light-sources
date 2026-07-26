@@ -26,11 +26,12 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 * 👀 **See it before you save it.** While you edit a light pattern, the change is previewed live on the selected token. Tweak until it looks right — nothing is written until you hit Save.
 * 🆓 **Free-for-all lights.** Mark a light source as "Free for All" and every character of an actor type you've enabled can use it, even if they don't carry the item — perfect for magical environmental effects, a bonfire everyone sits around, or a glowing aura that doesn't cost inventory. Regular, item-based sources are never restricted this way: carrying the item is always enough, regardless of actor type.
 * ✍️ **Register without an item.** No physical item yet, or want a source that exists by name alone? Click **Add by Name** in the config window to register one instantly — pairs naturally with Free for All.
-* 🪔 **Drop a light on the ground.** Light a source, then drop it — the burning light leaves your token and becomes an Ambient Light placed on the map at your token's feet. Walk away, and the torch stays behind on the floor. Dropping costs nothing extra: it puts down the light you already lit. Works even for players; the module relays the request to the GM.
+* 🪔 **Drop a light on the ground.** Light a source, then drop it — the burning light leaves your token and becomes an Ambient Light placed on the map at your token's feet. Walk away, and the torch stays behind on the floor, still burning down: leave it long enough and you'll come back to a torch that has gone out. Dropping costs nothing extra: it puts down the light you already lit. Works even for players; the module relays the request to the GM.
+* 🤲 **Pick it back up.** Changed your mind, or just came back for it? Walk a token onto the light you left behind — or onto any square beside it — and **Pick Up Light** appears in the flame menu. The torch returns to your hand still lit, carrying only the time it hasn't burned yet. Nothing is spent, because nothing needs to be: it's the same flame you put down, not a fresh torch off the sheet.
 * 🧩 **Works with any system.** Tell the module which item types are light sources, which actor types can use Free-for-All ones, and where an item's quantity lives — then it just works. Daggerheart comes preconfigured out of the box.
 * 📏 **Handy presets.** The radius and duration fields come with dropdown presets (10, 15, 20, 30, 60) so you can size a light — or a burn time — in a click instead of typing. Pick **Custom** whenever you want an exact value instead.
 * 🗺️ **The light follows the character.** It stays with them across scenes, and blowing it out restores exactly the token lighting they had before.
-* 💬 **Chat announcements.** Lighting a source, dropping it on the ground and burning out each post a styled chat card, so the table always knows who has light and who just lost it. Switching between a source's own patterns stays quiet — that's the same flame reshaped, not a new one. You can also send any registered light source to chat as a draggable card — drop it on an actor sheet to add it to their inventory.
+* 💬 **Chat announcements.** Lighting a source, dropping it on the ground, picking it back up and burning out each post a styled chat card, so the table always knows who has light and who just lost it. Switching between a source's own patterns stays quiet — that's the same flame reshaped, not a new one. You can also send any registered light source to chat as a draggable card — drop it on an actor sheet to add it to their inventory.
 * 🔌 **Developer API.** Module and system developers can [programmatically register light sources](docs/register-sources-api.md) from their own code — no manual drag-and-drop needed. Registered sources merge seamlessly with the GM's hand-picked ones.
 
 ## 🛠️ How to Use
@@ -79,6 +80,10 @@ To put it out, open the same menu and click **Extinguish Light**. If it burns ou
 **Drop a light**: once a light is burning, a **Drop** button appears next to it in the flame menu. Click it to put that light on the ground as an Ambient Light — useful for torches left behind in a hallway or campfires. Your token goes dark and the light stays where you dropped it. Nothing extra is consumed: you're putting down the light you already lit, not spending a second torch.
 
 ![Dropping a light source on the ground](docs/drop-light.gif)
+
+**Pick a light back up**: walk back to a torch you left on the floor and select your token. If it's standing on the light — or on any of the squares around it — **Pick Up Light** appears at the top of the flame menu. Click it and the flame comes back to your token with the time it has left on it. Like dropping, this costs nothing: you're picking up the torch you put down, not spending a new one.
+
+Do come back for it, though. A torch on the floor is still burning, and if you leave it too long you'll return to find it has gone out.
 
 ## 🔌 For Developers
 
