@@ -92,9 +92,13 @@ To put it out, open the same menu and click **Extinguish Light**. If it burns ou
 
 **Pick a light back up**: walk back to a torch you left on the floor and select your token. If it's standing on the light — or on any of the squares around it — **Pick Up Light** appears at the top of the flame menu. Click it and the flame comes back to your token with the time it has left on it. Like dropping, this costs nothing: you're picking up the torch you put down, not spending a new one.
 
+![Picking a dropped light back up off the ground](docs/player-pickup-light.gif)
+
 Do come back for it, though. A torch on the floor is still burning, and if you leave it too long you'll return to find it has gone out.
 
 **Switch a light on or off**: some lights on the map can be worked directly — any torch you dropped yourself, plus any scenery light your GM has opened up. Those show a small light control on the map. Move your token onto the light or next to it and click the control to snuff it or light it again. From further away the control stays faded and clicking it just tells you to get closer: you can only put out a light you've actually reached.
+
+![Switching a light on and off from the map](docs/player-can-turn-on-off-light.gif)
 
 ## 🔌 For Developers
 
