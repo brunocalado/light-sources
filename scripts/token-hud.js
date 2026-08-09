@@ -99,7 +99,6 @@ function buildToggleButton(palette, active) {
   // Computed once per render: the remaining time ages while the HUD stays open,
   // but the HUD re-renders on every token selection and after every light change.
   const tooltip = buildToggleTooltip(active);
-  button.dataset.tooltip = tooltip;
   button.setAttribute("aria-label", tooltip);
   const icon = document.createElement("i");
   icon.className = "fa-solid fa-fire-flame-curved";
@@ -117,8 +116,11 @@ function buildToggleButton(palette, active) {
  * extinguish control while a light is burning. Each of a source's light
  * patterns ("stages" — e.g. a flashlight's wide vs. narrow beam) gets its own
  * entry. Only one light can be active at a time: activating any entry simply
- * replaces the current one. The lit entry additionally carries a drop control,
- * since dropping relocates the burning light rather than spending a new item.
+ * replaces the current one, except the entry for the pattern already lit —
+ * clicking that one extinguishes it, mirroring the dedicated "off" row, since
+ * that is the click a player instinctively reaches for to turn a light back
+ * off. The lit entry additionally carries a drop control, since dropping
+ * relocates the burning light rather than spending a new item.
  * @param {foundry.applications.hud.TokenHUD} hud The HUD application (re-rendered after changes).
  * @param {Actor} actor The token's actor.
  * @param {Array<{source: object, items: Item[]}>} entries Registered sources present in the inventory.
@@ -168,7 +170,11 @@ function buildPalette(hud, actor, entries, active, ground) {
       button.addEventListener("click", async event => {
         event.preventDefault();
         palette.classList.remove("ls-open");
-        await activateLight(actor, source, pattern);
+        // Clicking the already-lit entry is how a player expects to put it out —
+        // the same action as the dedicated extinguish row below, just reachable
+        // without an extra scan down the palette.
+        if ( isActive ) await deactivateLight(actor);
+        else await activateLight(actor, source, pattern);
         hud.render();
       });
 
@@ -233,7 +239,6 @@ function buildPickupButton(hud, actor, palette, ground) {
   const button = document.createElement("button");
   button.type = "button";
   button.classList.add("ls-entry", "ls-pickup");
-  button.dataset.tooltip = game.i18n.localize("LIGHTSOURCES.Hud.PickupTooltip");
   button.setAttribute("aria-label", game.i18n.localize("LIGHTSOURCES.Hud.PickupTooltip"));
 
   const icon = document.createElement("i");

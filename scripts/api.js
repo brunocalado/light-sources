@@ -6,8 +6,8 @@
  * it under the terms of the GNU General Public License version 3.
  */
 
-import { MODULE_ID, DURATION_MODES } from "./constants.js";
-import { getSources, setSources, makePattern } from "./helpers.js";
+import { MODULE_ID, SETTINGS, DURATION_MODES } from "./constants.js";
+import { getSources, setSources, makePattern, getItemTypes, getActorTypes, getQuantityPath } from "./helpers.js";
 
 /**
  * The usage fields a caller supplies, with the API's documented defaults filled
@@ -141,4 +141,34 @@ export async function registerSources(entries, { managedBy = null } = {}) {
   }
 
   await setSources(sources);
+}
+
+/**
+ * Programmatically seed the compatibility settings (item types, actor types,
+ * and the item-quantity path) from an external system or module, mirroring
+ * what SYSTEM_PRESETS does for systems built into the module — but supplied
+ * at runtime by the caller instead of hardcoded in constants.js.
+ *
+ * Each field seeds independently and only when still unset, so this is safe
+ * to call every session (e.g. alongside registerSources in the same `ready`
+ * hook): a GM who has already configured any of these three through the
+ * Compatibility config window keeps that choice untouched, even if the
+ * caller supplies a different value for it.
+ *
+ * @param {object} [options={}]
+ * @param {string[]} [options.itemTypes] Item type ids to enable as light sources.
+ * @param {string[]} [options.actorTypes] Actor type ids allowed to carry/light sources.
+ * @param {string} [options.quantityPath] Dotted path (from an item's root) to its quantity.
+ * @returns {Promise<void>}
+ */
+export async function registerCompatibility({ itemTypes, actorTypes, quantityPath } = {}) {
+  if ( Array.isArray(itemTypes) && !getItemTypes().length ) {
+    await game.settings.set(MODULE_ID, SETTINGS.ITEM_TYPES, itemTypes);
+  }
+  if ( Array.isArray(actorTypes) && !getActorTypes().length ) {
+    await game.settings.set(MODULE_ID, SETTINGS.ACTOR_TYPES, actorTypes);
+  }
+  if ( quantityPath && !getQuantityPath() ) {
+    await game.settings.set(MODULE_ID, SETTINGS.QUANTITY_PATH, quantityPath);
+  }
 }

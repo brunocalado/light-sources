@@ -1,3 +1,16 @@
+# 0.0.6
+
+### Added
+
+* **`registerCompatibility` API.** A system or module integration can now seed the compatibility settings — Item Types, Actor Types, and the item-quantity path — programmatically, the same way `registerSources` registers light sources. This matters most for `freeForAll` sources: without a preset, they silently showed for no one until a GM opened the Compatibility window and enabled the relevant actor type by hand. Calling `registerCompatibility` alongside `registerSources` in the integration's own `ready` hook now takes care of that. Each field is seeded only when the GM hasn't already configured it, so the call is safe to repeat every session and never overwrites a GM's own choices. See `docs/register-sources-api.md`.
+
+### Changed
+
+* **Clicking a lit torch in the Token HUD now puts it out.** Previously, clicking the palette entry for the light already burning did nothing — the instinctive move for a player wanting to snuff their own torch. It now extinguishes the light, the same as the dedicated **Extinguish Light** row.
+* **Token HUD tooltips removed.** The flame toggle and the **Pick Up Light** button no longer pop up a tooltip on hover; the same text is still exposed to screen readers via `aria-label`.
+
+
+
 # 0.0.5
 
 ### Added

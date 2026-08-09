@@ -70,6 +70,33 @@ Register or update one or more light source definitions. Existing sources (match
 
 ---
 
+## `registerCompatibility(options?)`
+
+Seed the module's compatibility settings — the same three values the GM can set by hand in **Settings → Light Sources → Configure System Compatibility** — from your own module or system code. This plays the same role `SYSTEM_PRESETS` plays for systems built into the module (like Daggerheart), but supplied at runtime by you instead of hardcoded in the module.
+
+This matters most for `freeForAll` sources: they only appear in the Token HUD for actor types enabled in the **Actor Types** compatibility setting (see [`freeForAll`](#freeforall) below). For a system with no built-in preset, that list starts empty, so a `freeForAll` source silently shows for nobody until either the GM visits the Compatibility window, or your code calls `registerCompatibility`.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :---: | :--- |
+| `options` | `object` | — | The values to seed. |
+| `options.itemTypes` | `string[]` | — | Item type ids to enable as light sources. |
+| `options.actorTypes` | `string[]` | — | Actor type ids allowed to carry/light sources — and, specifically, to use `freeForAll` sources without an item. |
+| `options.quantityPath` | `string` | — | Dotted path (from an item's root) to its quantity, e.g. `"system.quantity"`. |
+
+### Returns
+
+`Promise<void>` — resolves once any seeded settings are persisted.
+
+### Behavior
+
+Each of the three fields is seeded **independently and only when still unset** — the same "never configured yet" semantics `SYSTEM_PRESETS` uses. If the GM has already set `actorTypes` by hand (through the Compatibility window, or through a previous call to this function), a later call passing a different `actorTypes` value does **not** overwrite it, even though `itemTypes` or `quantityPath` might still be empty and get seeded normally.
+
+This makes the call **safe to repeat every session**, the same way `registerSources` is meant to be re-called on every `ready` — it only ever fills in what nobody has configured yet, and never fights the GM for values they've already chosen.
+
+---
+
 ## Entry Schema
 
 Each object in the `entries` array describes a single light source:
@@ -201,6 +228,15 @@ Hooks.once("ready", async () => {
   const api = game.modules.get("light-sources")?.api;
   if ( !api ) return;
 
+  // Seed compatibility once so freeForAll sources work without the GM having to
+  // visit the Compatibility window by hand. Safe to call every session — it only
+  // fills in fields nobody has configured yet (see registerCompatibility above).
+  await api.registerCompatibility({
+    itemTypes: ["equipment"],
+    actorTypes: ["character"],
+    quantityPath: "system.quantity"
+  });
+
   await api.registerSources([
     {
       uuid: "Compendium.my-system.equipment.Item.torch01",
@@ -275,9 +311,10 @@ Hooks.once("ready", async () => {
 ```
 
 In this example:
+- **`registerCompatibility`** — seeds Item Types, Actor Types, and the quantity path, but only for whichever of those three the GM hasn't already touched.
 - **Torch** — consumed on use, lasts 60 in-game minutes, single pattern.
 - **Lantern** — consumed on use, lasts 4 in-game hours, two selectable brightness patterns.
-- **Magic Glow** — free for all actors, never consumed, unlimited duration.
+- **Magic Glow** — free for all actors of a type listed in `actorTypes` above, never consumed, unlimited duration.
 
 ---
 
@@ -288,6 +325,7 @@ In this example:
 - **Re-register every session**: The intended pattern is to pass your full, static entry list on every `ready`. That keeps sources in sync with your module's current defaults without ever overwriting the GM's edits.
 - **One write per call**: All entries are batched into a single database write. Pass all your sources in one array rather than making separate calls.
 - **System presets**: If your system already has built-in presets in the module (like Daggerheart), the API lets you replace or extend them programmatically.
+- **Seed compatibility before sources**: Call `registerCompatibility` before `registerSources` in the same `ready` hook, especially if you register any `freeForAll` source — otherwise it may silently show for no one until the GM opens the Compatibility window (see [`registerCompatibility`](#registercompatibilityoptions)).
 
 ---
 
