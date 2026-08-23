@@ -14,6 +14,14 @@
       "AllowFreeForAllDrop": {
         "Name": "Allow Dropping Free for All Lights",
         "Hint": "Let a lit \"Free for All\" light be dropped on the ground. No item backs these sources, so dropping one costs nothing and can be repeated without limit. Turn this off to keep free lights on tokens only. Lights that come from a carried item are always droppable."
+      },
+      "RestrictPlayerControl": {
+        "Name": "Restrict Light Control to the GM",
+        "Hint": "Only the GM can activate, extinguish, drop or pick up a light source from the Token HUD. Players still see the palette and the lit/unlit state, but their clicks on those controls are refused."
+      },
+      "AnnounceLit": {
+        "Name": "Announce Lights in Chat",
+        "Hint": "Post a chat message whenever a light source is lit. Other light events (extinguished, dropped, picked up, burned out) are unaffected."
       }
     },
     "Config": {
@@ -117,7 +125,8 @@
       "PickupSourceGone": "The {item} was picked up, but its light source is no longer configured, so it could not be lit again.",
       "PickupBurnedOut": "The {item} had already burned out before it was picked up.",
       "NoGm": "No GM is connected to place the light. Ask a GM to log in and try again.",
-      "NoItem": "{name} no longer carries {item}."
+      "NoItem": "{name} no longer carries {item}.",
+      "GmOnly": "Only the GM can control light sources."
     },
     "Interactive": {
       "Legend": "Light Sources",

@@ -9,7 +9,9 @@
 import {
   MODULE_ID, FLAGS, SOCKET_EVENT, DURATION_MODES, LIGHT_CHANGE_PRIORITY, EXPIRY_CHECK_INTERVAL_MS
 } from "./constants.js";
-import { findMatchingItems, buildLightMessage, getItemQuantity, getQuantityPath, getSources } from "./helpers.js";
+import {
+  findMatchingItems, buildLightMessage, getItemQuantity, getQuantityPath, getSources, getAnnounceLit
+} from "./helpers.js";
 
 /**
  * Interval id of the real-time expiry ticker, so it is only ever started once
@@ -225,6 +227,8 @@ export async function activateLight(actor, source, pattern) {
   }
 
   await createLightEffect(actor, source, pattern, buildTiming(source));
+
+  if ( !getAnnounceLit() ) return;
 
   // Name the pattern only when the source has more than one: a lone pattern is
   // the implicit default and its name carries no information (it may be empty).

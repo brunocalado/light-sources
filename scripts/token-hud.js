@@ -7,7 +7,9 @@
  */
 
 import { MODULE_ID, DURATION_MODES } from "./constants.js";
-import { getSources, findMatchingItems, getActorTypes, getAllowFreeForAllDrop, findGroundLight } from "./helpers.js";
+import {
+  getSources, findMatchingItems, getActorTypes, getAllowFreeForAllDrop, getRestrictPlayerControl, findGroundLight
+} from "./helpers.js";
 import { getActiveLight, activateLight, deactivateLight, dropLight, pickupLight } from "./light-manager.js";
 
 /**
@@ -58,6 +60,19 @@ function onRenderTokenHUD(hud, html) {
   const button = buildToggleButton(palette, active);
   wrapper.append(button, palette);
   (html.querySelector(".col.left") ?? html).appendChild(wrapper);
+}
+
+/**
+ * Refuse a player's click on a light-source control while the GM has restricted
+ * these controls to themselves. Checked at the moment of the click rather than by
+ * hiding the controls, so the palette keeps showing players what is lit and what
+ * is available — they just can't act on it.
+ * @returns {boolean} True when the click must be refused (and a warning was shown).
+ */
+function guardPlayerControl() {
+  if ( game.user.isGM || !getRestrictPlayerControl() ) return false;
+  ui.notifications.warn(game.i18n.localize("LIGHTSOURCES.Hud.GmOnly"));
+  return true;
 }
 
 /**
@@ -170,6 +185,7 @@ function buildPalette(hud, actor, entries, active, ground) {
       button.addEventListener("click", async event => {
         event.preventDefault();
         palette.classList.remove("ls-open");
+        if ( guardPlayerControl() ) return;
         // Clicking the already-lit entry is how a player expects to put it out —
         // the same action as the dedicated extinguish row below, just reachable
         // without an extra scan down the palette.
@@ -211,6 +227,7 @@ function buildPalette(hud, actor, entries, active, ground) {
     off.addEventListener("click", async event => {
       event.preventDefault();
       palette.classList.remove("ls-open");
+      if ( guardPlayerControl() ) return;
       await deactivateLight(actor);
       hud.render();
     });
@@ -253,6 +270,7 @@ function buildPickupButton(hud, actor, palette, ground) {
   button.addEventListener("click", async event => {
     event.preventDefault();
     palette.classList.remove("ls-open");
+    if ( guardPlayerControl() ) return;
     await pickupLight(actor, ground);
     hud.render();
   });
@@ -282,6 +300,7 @@ function buildDropButton(hud, actor, source, pattern) {
   drop.append(text);
   drop.addEventListener("click", async event => {
     event.preventDefault();
+    if ( guardPlayerControl() ) return;
     await dropLight(actor, source, pattern, hud.object);
     hud.render();
   });

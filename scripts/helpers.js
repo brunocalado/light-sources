@@ -69,6 +69,30 @@ export function getAllowFreeForAllDrop() {
 }
 
 /**
+ * Whether only the GM may activate, deactivate, drop or pick up a light source
+ * from the Token HUD. Players still see the palette and the lit/unlit state, but
+ * their clicks on those controls are refused with a warning (see
+ * `guardPlayerControl` in `token-hud.js`) — this is a client-side courtesy gate,
+ * consistent with the rest of the module's actor-write trust model, not a
+ * permission enforced against direct document writes.
+ * @returns {boolean} True when players are barred from working the controls.
+ */
+export function getRestrictPlayerControl() {
+  return game.settings.get(MODULE_ID, SETTINGS.RESTRICT_PLAYER_CONTROL) ?? false;
+}
+
+/**
+ * Whether lighting a source should post the "{actor} lights {item}" chat card.
+ * Gates only that announcement — extinguishing, dropping, picking up and
+ * burning out keep announcing regardless, since a GM who wants quieter chat
+ * about *lighting* still typically wants those other events called out.
+ * @returns {boolean} True when lighting a source announces in chat.
+ */
+export function getAnnounceLit() {
+  return game.settings.get(MODULE_ID, SETTINGS.ANNOUNCE_LIT) ?? true;
+}
+
+/**
  * The dotted path (from an item's root) to its quantity, as configured for the
  * detected system. Empty when the system has no quantity concept configured.
  * @returns {string} The quantity path (e.g. "system.quantity"), or "".

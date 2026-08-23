@@ -56,6 +56,24 @@ Hooks.once("init", () => {
     default: true
   });
 
+  game.settings.register(MODULE_ID, SETTINGS.RESTRICT_PLAYER_CONTROL, {
+    name: "LIGHTSOURCES.Settings.RestrictPlayerControl.Name",
+    hint: "LIGHTSOURCES.Settings.RestrictPlayerControl.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.ANNOUNCE_LIT, {
+    name: "LIGHTSOURCES.Settings.AnnounceLit.Name",
+    hint: "LIGHTSOURCES.Settings.AnnounceLit.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   game.settings.registerMenu(MODULE_ID, SETTINGS.MENU, {
     name: "LIGHTSOURCES.Settings.Menu.Name",
     label: "LIGHTSOURCES.Settings.Menu.Label",

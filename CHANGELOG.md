@@ -1,3 +1,10 @@
+# 0.0.7
+
+### Added
+
+* **Restrict light control to the GM.** New world setting, **Restrict Light Control to the GM** (off by default). When enabled, only the GM may activate, extinguish, drop or pick up a light source from the Token HUD — players still see the palette and the lit/unlit state, but their clicks on those controls are refused. ([#2](https://github.com/brunocalado/light-sources/issues/2))
+* **Toggle for "light lit" chat announcements.** New world setting, **Announce Lights in Chat** (on by default). Turn it off to stop the "{actor} lights {item}" chat card from posting when a source is lit. Extinguishing, dropping, picking up and burning out keep announcing regardless. ([#1](https://github.com/brunocalado/light-sources/issues/1))
+
 # 0.0.6
 
 ### Added

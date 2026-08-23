@@ -22,7 +22,12 @@ export const MODULE_ID = "light-sources";
  * - `QUANTITY_PATH`: dotted path (from the item root) to an item's quantity.
  * - `ALLOW_FREE_FOR_ALL_DROP`: whether "free for all" lights may be dropped on
  *   the ground (see `getAllowFreeForAllDrop` in `helpers.js`).
- * @type {{SOURCES: string, MENU: string, COMPAT_MENU: string, ITEM_TYPES: string, ACTOR_TYPES: string, QUANTITY_PATH: string, ALLOW_FREE_FOR_ALL_DROP: string}}
+ * - `RESTRICT_PLAYER_CONTROL`: whether only the GM may activate, deactivate,
+ *   drop or pick up a light source from the Token HUD (see
+ *   `getRestrictPlayerControl` in `helpers.js`).
+ * - `ANNOUNCE_LIT`: whether lighting a source posts a chat message (see
+ *   `getAnnounceLit` in `helpers.js`).
+ * @type {{SOURCES: string, MENU: string, COMPAT_MENU: string, ITEM_TYPES: string, ACTOR_TYPES: string, QUANTITY_PATH: string, ALLOW_FREE_FOR_ALL_DROP: string, RESTRICT_PLAYER_CONTROL: string, ANNOUNCE_LIT: string}}
  */
 export const SETTINGS = {
   SOURCES: "sources",
@@ -31,7 +36,9 @@ export const SETTINGS = {
   ITEM_TYPES: "itemTypes",
   ACTOR_TYPES: "actorTypes",
   QUANTITY_PATH: "quantityPath",
-  ALLOW_FREE_FOR_ALL_DROP: "allowFreeForAllDrop"
+  ALLOW_FREE_FOR_ALL_DROP: "allowFreeForAllDrop",
+  RESTRICT_PLAYER_CONTROL: "restrictPlayerControl",
+  ANNOUNCE_LIT: "announceLit"
 };
 
 /**

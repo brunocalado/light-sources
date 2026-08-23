@@ -32,7 +32,8 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 * 🧩 **Works with any system.** Tell the module which item types are light sources, which actor types can use Free-for-All ones, and where an item's quantity lives — then it just works. Daggerheart comes preconfigured out of the box.
 * 📏 **Handy presets.** The radius and duration fields come with dropdown presets (10, 15, 20, 30, 60) so you can size a light — or a burn time — in a click instead of typing. Pick **Custom** whenever you want an exact value instead.
 * 🗺️ **The light follows the character.** It stays with them across scenes, and blowing it out restores exactly the token lighting they had before.
-* 💬 **Chat announcements.** Lighting a source, dropping it on the ground, picking it back up and burning out each post a styled chat card, so the table always knows who has light and who just lost it. Switching between a source's own patterns stays quiet — that's the same flame reshaped, not a new one. You can also send any registered light source to chat as a draggable card — drop it on an actor sheet to add it to their inventory.
+* 💬 **Chat announcements.** Lighting a source, dropping it on the ground, picking it back up and burning out each post a styled chat card, so the table always knows who has light and who just lost it. Switching between a source's own patterns stays quiet — that's the same flame reshaped, not a new one. Lighting announcements can be turned off entirely in the world settings if your table finds them noisy. You can also send any registered light source to chat as a draggable card — drop it on an actor sheet to add it to their inventory.
+* 🔒 **GM-only mode.** A world setting locks the Token HUD's light controls to the GM alone — players still see what's lit, but activating, extinguishing, dropping and picking up sources becomes the GM's call.
 * 🔌 **Developer API.** Module and system developers can [programmatically register light sources](docs/register-sources-api.md) from their own code — no manual drag-and-drop needed. Registered sources merge seamlessly with the GM's hand-picked ones.
 
 ## 🛠️ How to Use
@@ -60,8 +61,10 @@ Optional per-source toggles on the config window:
 * **Free for All** — when enabled, every actor of an enabled Actor Type can light this source without carrying the item.
 * **Send to Chat** — posts a draggable item card that can be dropped onto actor sheets.
 
-There is also one world setting under **Game Settings → Configure Settings → Light Sources**:
+There are also a few world settings under **Game Settings → Configure Settings → Light Sources**:
 * **Allow Dropping Free for All Lights** (on by default) — whether a lit Free-for-All light can be dropped on the ground. No item backs these sources, so dropping one costs nothing and can be repeated without limit; turn this off if you'd rather free lights stayed on tokens. Lights that come from a carried item are always droppable.
+* **Restrict Light Control to the GM** (off by default) — when enabled, only the GM can activate, extinguish, drop or pick up a light source from the Token HUD. Players still see the flame menu and what's currently lit, but their clicks on those controls are refused.
+* **Announce Lights in Chat** (on by default) — turn off to stop lighting a source from posting the "lights it" chat card. Extinguishing, dropping, picking up and burning out keep announcing regardless.
 
 Tip: select a token on the canvas while you edit — you'll watch the light change on the map in real time.
 
