@@ -128,6 +128,13 @@
     <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.ConsumeHint"}}</p>
   </div>
   <div class="form-group">
+    <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Coverable"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="coverable" {{checked source.coverable}}>
+    </div>
+    <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.CoverableHint"}}</p>
+  </div>
+  <div class="form-group">
     <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Duration"}}</label>
     <div class="form-fields ls-value-field">
       <input type="number" name="durationMinutes" value="{{source.durationMinutes}}" min="0" step="1">

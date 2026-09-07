@@ -1,3 +1,17 @@
+# 0.0.8
+
+### Added
+
+* **Stow a light instead of destroying it.** New per-source option **Can Be Covered** (off by default), on the light editor's Consumption tab. A source that has it grows a **Stow** control beside **Drop** on the Token HUD row of the light currently burning: stowing covers the light instead of ending it — it stops shining, but the effect and its expiry both stay put, so the countdown keeps running and **Uncover** brings it back with only the time it has left. A covered light burns out on schedule like any other, announced in chat as usual. ([#3](https://github.com/brunocalado/light-sources/issues/3))
+
+  This exists for lights that are a spell on an object rather than a flame. A Light cantrip cast on a pebble is pocketed, not snuffed, and the only "off" the module had was **Extinguish**, which ends the spell — a one-way door, and worse for a character carrying a light someone else cast, whose HUD row disappears along with it. Torches, lanterns and candles keep the behaviour they have always had: the option stays off unless a GM turns it on, and every control they show is unchanged.
+
+  Covering uses core's own `disabled` on the effect rather than zeroing the light radius, which has one visible consequence: a token that emits light of its own — a glowing creature, a light on its prototype token — gets that light back while the carried source is covered, instead of being blacked out. It also means the light can be uncovered from the effects tab of the character sheet; the HUD reads the effect's state rather than a copy of it, so the two never disagree.
+
+* **A covered light stays covered on the ground.** Dropping a stowed light places it using the AmbientLight's native `hidden` state — the same one the map control switches — and picking it back up returns it covered, with its remaining time. This applies only to sources marked **Can Be Covered**; a torch snuffed on the floor and picked back up lights normally, as before.
+
+* `coverable` is accepted by `registerSources`, so a system or module integration can ship it as a default. Like the other usage fields it freezes once the GM edits the source, and comes back with **Restore Module Default**. See `docs/register-sources-api.md`.
+
 # 0.0.7
 
 ### Added

@@ -135,6 +135,7 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
       type: item.type,
       consume: false,
       freeForAll: false,
+      coverable: false,
       durationMode: DURATION_MODES.WORLD,
       durationMinutes: 0,
       patterns: [makePattern(DEFAULT_LIGHT, game.i18n.localize("LIGHTSOURCES.Patterns.Standard"))]
@@ -186,6 +187,7 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
       type: null,
       consume: false,
       freeForAll: false,
+      coverable: false,
       durationMode: DURATION_MODES.WORLD,
       durationMinutes: 0,
       patterns: [makePattern(DEFAULT_LIGHT, game.i18n.localize("LIGHTSOURCES.Patterns.Standard"))]

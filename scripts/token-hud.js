@@ -10,7 +10,9 @@ import { MODULE_ID, DURATION_MODES } from "./constants.js";
 import {
   getSources, findMatchingItems, getActorTypes, getAllowFreeForAllDrop, getRestrictPlayerControl, findGroundLight
 } from "./helpers.js";
-import { getActiveLight, activateLight, deactivateLight, dropLight, pickupLight } from "./light-manager.js";
+import {
+  getActiveLight, activateLight, deactivateLight, setLightStowed, dropLight, pickupLight
+} from "./light-manager.js";
 
 /**
  * Register the Token HUD integration hooks.
@@ -92,12 +94,18 @@ function buildToggleTooltip(active) {
   const remainingMs = active.mode === DURATION_MODES.REAL
     ? (active.expiresAtReal != null ? active.expiresAtReal - Date.now() : null)
     : (active.expiresAtWorld != null ? (active.expiresAtWorld - game.time.worldTime) * 1000 : null);
-  if ( remainingMs === null ) return game.i18n.format("LIGHTSOURCES.Hud.TooltipLit", { item: active.itemName });
+  // A covered light is still burning down, so it reports its remaining time exactly
+  // like a shining one — only the wording says it is out of sight.
+  if ( remainingMs === null ) {
+    const key = active.stowed ? "LIGHTSOURCES.Hud.TooltipStowed" : "LIGHTSOURCES.Hud.TooltipLit";
+    return game.i18n.format(key, { item: active.itemName });
+  }
 
   // Round up, and never read "0 min": the light keeps burning until the expiry
   // sweep catches it, so its last partial minute should still show as one.
   const minutes = Math.max(1, Math.ceil(remainingMs / 60000));
-  return game.i18n.format("LIGHTSOURCES.Hud.TooltipRemaining", { item: active.itemName, minutes });
+  const key = active.stowed ? "LIGHTSOURCES.Hud.TooltipStowedRemaining" : "LIGHTSOURCES.Hud.TooltipRemaining";
+  return game.i18n.format(key, { item: active.itemName, minutes });
 }
 
 /**
@@ -110,7 +118,9 @@ function buildToggleButton(palette, active) {
   const button = document.createElement("button");
   button.type = "button";
   button.classList.add("control-icon", MODULE_ID, "ls-toggle");
-  if ( active ) button.classList.add("ls-lit");
+  // A covered light gets its own treatment rather than the lit one: nothing is
+  // shining, but something is still burning down and the button must not read as idle.
+  if ( active ) button.classList.add(active.stowed ? "ls-stowed" : "ls-lit");
   // Computed once per render: the remaining time ages while the HUD stays open,
   // but the HUD re-renders on every token selection and after every light change.
   const tooltip = buildToggleTooltip(active);
@@ -135,7 +145,8 @@ function buildToggleButton(palette, active) {
  * clicking that one extinguishes it, mirroring the dedicated "off" row, since
  * that is the click a player instinctively reaches for to turn a light back
  * off. The lit entry additionally carries a drop control, since dropping
- * relocates the burning light rather than spending a new item.
+ * relocates the burning light rather than spending a new item, and — for a source
+ * marked coverable — a control that covers the light without ending it.
  * @param {foundry.applications.hud.TokenHUD} hud The HUD application (re-rendered after changes).
  * @param {Actor} actor The token's actor.
  * @param {Array<{source: object, items: Item[]}>} entries Registered sources present in the inventory.
@@ -199,13 +210,16 @@ function buildPalette(hud, actor, entries, active, ground) {
       // backs them), so a GM setting gates whether they can be dropped at all.
       // The drop control is a *sibling* of the entry button, not a child: a native
       // <button> swallows pointer events from nested interactive elements, so a
-      // nested drop button/span never receives its own clicks.
+      // nested drop button/span never receives its own clicks. The cover control
+      // follows the same rule, and sits after drop so drop stays where it has
+      // always been for anyone used to reaching for it.
       const droppable = isActive && (!source.freeForAll || getAllowFreeForAllDrop());
       const drop = droppable ? buildDropButton(hud, actor, source, pattern) : null;
-      if ( drop ) {
+      const stow = (isActive && source.coverable) ? buildStowButton(hud, actor, active) : null;
+      if ( drop || stow ) {
         const row = document.createElement("div");
         row.classList.add("ls-row");
-        row.append(button, drop);
+        row.append(button, ...[drop, stow].filter(control => control));
         palette.append(row);
       } else {
         palette.append(button);
@@ -305,4 +319,41 @@ function buildDropButton(hud, actor, source, pattern) {
     hud.render();
   });
   return drop;
+}
+
+/**
+ * Build the secondary "Stow"/"Uncover" control for the lit pattern row: covers the
+ * burning light without ending it, or takes it back out (see `setLightStowed` in
+ * `light-manager.js`). Only built for the lit row of a source the GM marked
+ * coverable — a torch has nothing to cover, it is snuffed or it burns.
+ *
+ * One button for both directions rather than two rows: covering and uncovering are
+ * the same gesture from opposite sides, and the label already says which way it
+ * goes. Rendered as a sibling of the entry button for the same reason the drop
+ * control is (see `buildDropButton`).
+ * @param {foundry.applications.hud.TokenHUD} hud The HUD application (re-rendered afterwards).
+ * @param {Actor} actor The token's actor.
+ * @param {object} active The actor's active light flag, carrying the derived `stowed` state.
+ * @returns {HTMLButtonElement} The cover control button.
+ */
+function buildStowButton(hud, actor, active) {
+  const stowed = !!active.stowed;
+  const stow = document.createElement("button");
+  stow.type = "button";
+  stow.classList.add("ls-stow");
+  if ( stowed ) stow.classList.add("ls-stowed");
+  stow.setAttribute("aria-label", game.i18n.localize(
+    stowed ? "LIGHTSOURCES.Hud.UncoverTooltip" : "LIGHTSOURCES.Hud.StowTooltip"
+  ));
+  const text = document.createElement("span");
+  text.className = "ls-stow-label";
+  text.textContent = game.i18n.localize(stowed ? "LIGHTSOURCES.Hud.Uncover" : "LIGHTSOURCES.Hud.Stow");
+  stow.append(text);
+  stow.addEventListener("click", async event => {
+    event.preventDefault();
+    if ( guardPlayerControl() ) return;
+    await setLightStowed(actor, !stowed);
+    hud.render();
+  });
+  return stow;
 }

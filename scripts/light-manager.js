@@ -33,11 +33,17 @@ export function getLightEffect(actor) {
 /**
  * Get the active light bookkeeping payload stored on an Actor's light effect.
  * Used by the Token HUD to reflect the lit/unlit state.
+ *
+ * `stowed` is derived from the effect's own `disabled` state rather than stored
+ * alongside the flag: a player can disable the effect straight from their character
+ * sheet, and a second copy of that state in the flag would drift the moment they did.
  * @param {Actor} actor The actor to inspect.
- * @returns {object|null} The flag payload ({sourceId, patternId, patternName, itemName, mode, expiresAtWorld, expiresAtReal}) or null.
+ * @returns {object|null} The flag payload ({sourceId, patternId, patternName, itemName, mode, expiresAtWorld, expiresAtReal}) plus the derived `stowed`, or null.
  */
 export function getActiveLight(actor) {
-  return getLightEffect(actor)?.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT) ?? null;
+  const effect = getLightEffect(actor);
+  const flag = effect?.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT);
+  return flag ? { ...flag, stowed: !!effect.disabled } : null;
 }
 
 /**
@@ -136,9 +142,13 @@ function isExpired(flag, now) {
  * @param {object} pattern The light pattern ({id, name, light}) to light.
  * @param {{mode: string, expiresAtWorld: number|null, expiresAtReal: number|null}} timing
  *   When the light burns out, as absolute stamps (see `buildTiming`).
+ * @param {object} [options={}] Creation options.
+ * @param {boolean} [options.stowed=false] Create the light already covered, so it
+ *   burns down without shining (see `setLightStowed`). Used when picking a light
+ *   back up that was lying on the ground switched off.
  * @returns {Promise<void>}
  */
-async function createLightEffect(actor, source, pattern, timing) {
+async function createLightEffect(actor, source, pattern, timing, { stowed = false } = {}) {
   // Only one light effect at a time: remove any previous one (switching sources / re-lighting).
   const stale = actor.effects.filter(e => e.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT)).map(e => e.id);
   if ( stale.length ) await actor.deleteEmbeddedDocuments("ActiveEffect", stale);
@@ -170,6 +180,7 @@ async function createLightEffect(actor, source, pattern, timing) {
     img: source.img,
     type: "base",
     transfer: false,
+    disabled: stowed,
     duration,
     system: { changes: buildLightChanges(pattern) },
     flags: { [MODULE_ID]: { [FLAGS.EFFECT_LIGHT]: {
@@ -253,6 +264,10 @@ export async function activateLight(actor, source, pattern) {
  * and both expiry stamps survive verbatim — a GM re-timing the source mid-burn does
  * not retime a flame that is already lit. Nothing is announced in chat: the table
  * already heard this light being lit.
+ *
+ * Reshaping a stowed light also uncovers it (see `setLightStowed`): picking a
+ * different pattern is a request to see that pattern, and leaving the effect
+ * disabled would make the click do nothing visible.
  * @param {Actor} actor The actor whose light is being reshaped.
  * @param {ActiveEffect} effect The module's light effect currently on the actor.
  * @param {object} pattern The light pattern ({id, name, light}) to switch to.
@@ -262,9 +277,36 @@ async function switchPattern(actor, effect, pattern) {
   const flag = effect.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT);
   await actor.updateEmbeddedDocuments("ActiveEffect", [{
     _id: effect.id,
+    disabled: false,
     system: { changes: buildLightChanges(pattern) },
     flags: { [MODULE_ID]: { [FLAGS.EFFECT_LIGHT]: { ...flag, patternId: pattern.id, patternName: pattern.name } } }
   }]);
+}
+
+/**
+ * Cover or uncover the light burning on an Actor: the flame stops shining, but the
+ * effect — and with it both expiry stamps — stays exactly where it is.
+ *
+ * This is the non-destructive counterpart to `deactivateLight`, for sources whose
+ * light is not a physical flame to be snuffed but a spell on an object that can be
+ * pocketed and taken back out (a Light cantrip cast on a pebble, a lit driftglobe).
+ * Extinguishing such a source ends the spell; covering it does not.
+ *
+ * The mechanism is core's own `disabled`: `Actor#applyActiveEffects` skips an
+ * inactive effect entirely, so the token drops straight back to whatever light it
+ * emits on its own — including light it emitted before this one was lit, which
+ * overriding the radii to 0 would have stamped out. Nothing is written to the
+ * duration, so the countdown carries on toward the same instant it always would
+ * have, and the expiry sweep puts a covered light out on schedule like any other.
+ * Nothing is announced in chat, mirroring extinguishing.
+ * @param {Actor} actor The actor whose light is covered or uncovered.
+ * @param {boolean} stowed True to cover the light, false to uncover it.
+ * @returns {Promise<void>}
+ */
+export async function setLightStowed(actor, stowed) {
+  const effect = getLightEffect(actor);
+  if ( !effect || (effect.disabled === !!stowed) ) return;
+  await actor.updateEmbeddedDocuments("ActiveEffect", [{ _id: effect.id, disabled: !!stowed }]);
 }
 
 /**
@@ -306,6 +348,10 @@ export async function dropLight(actor, source, pattern, token) {
     x,
     y,
     config: buildLightData(pattern),
+    // A covered light put down stays covered: `hidden` is the ground's own version
+    // of stowed — the same state the interactive control switches — so the light
+    // reads identically in a pocket and on the floor (see `setLightStowed`).
+    hidden: !!active.stowed,
     // Everything needed to light this same flame again on a token, plus enough to
     // tell a dropped light apart from scenery the GM placed by hand. The expiry
     // stamps carry over untouched: the flame goes on burning where it lies, so the
@@ -362,6 +408,11 @@ export async function pickupLight(actor, light) {
   const ground = light?.getFlag(MODULE_ID, FLAGS.GROUND_LIGHT);
   if ( !ground ) return;
 
+  // Read before the document goes: a light lying switched off comes back covered
+  // rather than shining, but only for a source that can be covered at all — a
+  // snuffed torch has no such state to return to and lights normally, as it always did.
+  const hidden = !!light.hidden;
+
   const removed = await removeAmbientLight(light.parent?.id, light.id);
   // Nothing left the ground (no GM to remove it): don't hand the actor a second
   // copy of a flame still lying on the map. `removeAmbientLight` reports the cause.
@@ -383,7 +434,7 @@ export async function pickupLight(actor, light) {
     mode: ground.mode,
     expiresAtWorld: ground.expiresAtWorld,
     expiresAtReal: ground.expiresAtReal
-  });
+  }, { stowed: !!source.coverable && hidden });
 
   await ChatMessage.implementation.createDocuments([
     buildLightMessage(

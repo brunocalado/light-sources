@@ -31,7 +31,7 @@
       <div class="ls-info">
         <span class="ls-name">{{this.name}}</span>
         <span class="ls-meta">
-          {{#if this.typeLabel}}{{this.typeLabel}} &middot; {{/if}}{{this.durationLabel}}{{#if this.patternLabel}} &middot; {{this.patternLabel}}{{/if}}{{#if this.consume}} &middot; {{localize "LIGHTSOURCES.Config.Consumed"}}{{/if}}{{#if this.freeForAll}} &middot; {{localize "LIGHTSOURCES.Config.FreeForAll"}}{{/if}}
+          {{#if this.typeLabel}}{{this.typeLabel}} &middot; {{/if}}{{this.durationLabel}}{{#if this.patternLabel}} &middot; {{this.patternLabel}}{{/if}}{{#if this.consume}} &middot; {{localize "LIGHTSOURCES.Config.Consumed"}}{{/if}}{{#if this.freeForAll}} &middot; {{localize "LIGHTSOURCES.Config.FreeForAll"}}{{/if}}{{#if this.coverable}} &middot; {{localize "LIGHTSOURCES.Config.Coverable"}}{{/if}}
         </span>
       </div>
       {{#if this.managedBy}}

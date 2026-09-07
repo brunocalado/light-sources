@@ -124,6 +124,7 @@ Each object in the `entries` array describes a single light source:
   ],
   consume: boolean,          // Optional – subtract one from the item's quantity when lit; the only moment an item is ever spent (default: false)
   freeForAll: boolean,       // Optional – any actor of an Actor-Types-enabled type can light this, no inventory item needed (default: false)
+  coverable: boolean,        // Optional – the light can be covered instead of ended, keeping its remaining duration (default: false)
   durationMode: string,      // Optional – "world" (in-game clock) or "real" (wall clock) (default: "world")
   durationMinutes: number    // Optional – minutes until the light burns out; 0 = unlimited (default: 0)
 }
@@ -150,6 +151,18 @@ Items are matched by `flags.core.sourceId` (the origin UUID core stamps on an em
 When `true`, the source appears in the Token HUD only for actor types enabled in the module's compatibility settings (the "Actor Types" tab) — it needs no inventory item, and the item is never consumed. Useful for ambient environmental effects ("everyone eligible can see in this magically lit area").
 
 Item-based sources (`freeForAll: false`, the default) work differently: they appear in the Token HUD for **any** actor type that carries a matching item, regardless of the Actor Types setting — carrying the item is itself the permission check. The Actor Types setting only restricts `freeForAll` sources.
+
+#### `coverable`
+When `true`, the Token HUD grows a **Stow** control beside **Drop** on the row of the light currently burning. Stowing covers the light instead of ending it: it stops shining, but the effect and both expiry stamps stay exactly where they are, so the countdown keeps running and **Uncover** brings it back with only the time it has left. The expiry sweep puts a covered light out on schedule like any other, announced in chat the usual way.
+
+This is meant for a light that is a spell on an object rather than a flame — a Light cantrip cast on a pebble is pocketed, not snuffed, and pocketing it must not end the spell. Leave it `false` (the default) for torches, lanterns and candles, whose only correct "off" is destructive.
+
+Covering is implemented as core's own `disabled` on the effect, not as a radius of 0, which has one visible consequence worth relying on: a token that emits light of its **own** (a glowing creature, a prototype-token light, another module's aura) gets that light back while the source is covered, instead of being blacked out. It also means a player can uncover a light straight from the effects tab of their character sheet; the Token HUD reads the effect's state rather than a copy of it, so the two never disagree.
+
+Two limits follow from the module's one-light-per-actor rule, and neither changes with `coverable`:
+
+- **Extinguish still ends the light for good**, covered or not, and so does lighting a *different* source — a covered light is deleted like any other when it is replaced. To keep a spell alive while lighting something else, **drop** it: on the ground it goes on burning down, and anyone can pick it back up.
+- **A covered light dropped on the ground stays covered**, using the AmbientLight's native `hidden` state — the same state the map control switches. Picking it back up returns it covered. This applies only to `coverable` sources: a torch snuffed on the floor and picked up lights normally, exactly as it always did.
 
 #### Dropping
 Any lit light can be dropped on the ground as an AmbientLight from the Token HUD. Dropping **relocates the burning light** — it does not spend an item, whatever the source's `consume` value: a consuming source already paid when it was lit, and a non-consuming one never pays at all. The control appears only on the entry that is currently lit, since there is nothing to relocate otherwise.
@@ -178,6 +191,7 @@ The module posts its own styled chat card for three light events, on every sourc
 | A lit light is dropped | ✅ Only once the light actually reaches the ground. |
 | A duration runs out | ✅ Posted by the active GM's expiry sweep. |
 | Switching between a source's patterns | ❌ Silent — the same flame is being reshaped, not lit. |
+| Covering or uncovering a light | ❌ Silent — nothing was lit or put out, mirroring extinguishing. |
 
 There is currently no per-source way to opt out of these announcements.
 
@@ -198,7 +212,7 @@ All updates from a single `registerSources` call are batched into **one write** 
 
 The values you pass are **defaults, not enforced settings**. The GM can edit any registered source in the module's configuration window, and the module protects that work — automatically, for every source registered through this API:
 
-- As soon as the GM saves an edit to one of your sources, that source is **frozen**. Your subsequent `registerSources` calls will no longer overwrite its patterns, consumption, duration or free-for-all flag.
+- As soon as the GM saves an edit to one of your sources, that source is **frozen**. Your subsequent `registerSources` calls will no longer overwrite its patterns, consumption, duration, free-for-all or coverable flags.
 - Your calls are still not wasted on a frozen source. The module keeps a **snapshot of the latest values you registered**, so:
   - A pattern you have **added** since the GM's edit is still appended to the source — the GM sees your new patterns without losing their own changes.
   - When the GM clicks **Restore Module Default**, the source reverts to the values from your **most recent** call, not to whatever you registered the first time. Shipping new defaults in a module update is therefore always worthwhile, even for sources a GM has already customized.
@@ -304,6 +318,7 @@ Hooks.once("ready", async () => {
       ],
       consume: false,
       freeForAll: true,
+      coverable: true,
       durationMinutes: 0
     }
   ], { managedBy: "my-system" });
@@ -314,7 +329,7 @@ In this example:
 - **`registerCompatibility`** — seeds Item Types, Actor Types, and the quantity path, but only for whichever of those three the GM hasn't already touched.
 - **Torch** — consumed on use, lasts 60 in-game minutes, single pattern.
 - **Lantern** — consumed on use, lasts 4 in-game hours, two selectable brightness patterns.
-- **Magic Glow** — free for all actors of a type listed in `actorTypes` above, never consumed, unlimited duration.
+- **Magic Glow** — free for all actors of a type listed in `actorTypes` above, never consumed, unlimited duration, and coverable: it is a spell on an object, so it can be pocketed and taken back out rather than only destroyed.
 
 ---
 

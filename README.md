@@ -28,6 +28,7 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 * ✍️ **Register without an item.** No physical item yet, or want a source that exists by name alone? Click **Add by Name** in the config window to register one instantly — pairs naturally with Free for All.
 * 🪔 **Drop a light on the ground.** Light a source, then drop it — the burning light leaves your token and becomes an Ambient Light placed on the map at your token's feet. Walk away, and the torch stays behind on the floor, still burning down: leave it long enough and you'll come back to a torch that has gone out. Dropping costs nothing extra: it puts down the light you already lit. Works even for players; the module relays the request to the GM.
 * 🤲 **Pick it back up.** Changed your mind, or just came back for it? Walk a token onto the light you left behind — or onto any square beside it — and **Pick Up Light** appears in the flame menu. The torch returns to your hand still lit, carrying only the time it hasn't burned yet. Nothing is spent, because nothing needs to be: it's the same flame you put down, not a fresh torch off the sheet.
+* 🫥 **Pocket a light without losing it.** Some lights aren't flames to be snuffed — a Light spell cast on a pebble is *covered*, not put out. Mark a source **Can Be Covered** and its lit row grows a **Stow** button beside Drop: the light stops shining but goes on burning down in the character's pocket, and **Uncover** brings it back with the time it has left. Extinguishing is still there for when the spell really should end. Torches and lanterns are untouched — they only get this if you ask for it.
 * 💡 **Lights the players can switch.** Tick **Players Can Switch** on any light in the scene's own light configuration and a control appears over it on the map, much like a door's. Players walk a token up to the light and click to snuff it or light it again — a corridor of torches stops being scenery and becomes something a stealthy party can do something about. Lights a player dropped are theirs to work from the start, no GM tick required.
 * 🧩 **Works with any system.** Tell the module which item types are light sources, which actor types can use Free-for-All ones, and where an item's quantity lives — then it just works. Daggerheart comes preconfigured out of the box.
 * 📏 **Handy presets.** The radius and duration fields come with dropdown presets (10, 15, 20, 30, 60) so you can size a light — or a burn time — in a click instead of typing. Pick **Custom** whenever you want an exact value instead.
@@ -56,6 +57,8 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
    * **Consumption** — whether lighting it uses one up, how many minutes it burns before dying out (`0` = burns forever until put out by hand), and whether that countdown runs on the **in-game clock** or on **real time**.
 
      ![Configuring consumption](docs/consumption.webp)
+
+   * **Can Be Covered** — on the same tab: whether this light can be stowed instead of extinguished (see below). Off by default.
 
 Optional per-source toggles on the config window:
 * **Free for All** — when enabled, every actor of an enabled Actor Type can light this source without carrying the item.
@@ -98,6 +101,10 @@ To put it out, open the same menu and click **Extinguish Light**. If it burns ou
 ![Picking a dropped light back up off the ground](docs/player-pickup-light.gif)
 
 Do come back for it, though. A torch on the floor is still burning, and if you leave it too long you'll return to find it has gone out.
+
+**Stow a light**: if the GM marked the source **Can Be Covered**, a **Stow** button sits beside Drop on the light you're carrying. Click it and the light goes dark without going out — it keeps burning down in your pocket, the flame button stays marked, and hovering it still tells you how long is left. Click **Uncover** to take it back out. This is what you want for a spell cast on an object: **Extinguish** ends the spell for good, stowing does not.
+
+One thing worth knowing: your character carries one light at a time. Lighting something else replaces the stowed one and the spell is gone with it. If you want to keep it alive while you carry a torch, **drop** it instead — on the floor it goes on burning down, covered exactly as you left it, and anyone can pick it back up.
 
 **Switch a light on or off**: some lights on the map can be worked directly — any torch you dropped yourself, plus any scenery light your GM has opened up. Those show a small light control on the map. Move your token onto the light or next to it and click the control to snuff it or light it again. From further away the control stays faded and clicking it just tells you to get closer: you can only put out a light you've actually reached.
 

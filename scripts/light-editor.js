@@ -332,7 +332,7 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const source = this.source
-      ?? { patterns: [makePattern(DEFAULT_LIGHT, game.i18n.localize("LIGHTSOURCES.Patterns.Standard"))], consume: false, durationMode: DURATION_MODES.WORLD, durationMinutes: 0 };
+      ?? { patterns: [makePattern(DEFAULT_LIGHT, game.i18n.localize("LIGHTSOURCES.Patterns.Standard"))], consume: false, coverable: false, durationMode: DURATION_MODES.WORLD, durationMinutes: 0 };
     const patterns = this.#draftPatterns ?? source.patterns;
     context.source = source;
     context.tabs = this._prepareTabs("primary");
@@ -468,6 +468,7 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
     if ( !source ) return;
 
     source.consume = !!data.consume;
+    source.coverable = !!data.coverable;
     source.durationMode = data.durationMode === DURATION_MODES.REAL ? DURATION_MODES.REAL : DURATION_MODES.WORLD;
     source.durationMinutes = Math.max(0, Math.round(Number(data.durationMinutes) || 0));
     source.patterns = this.#patternsFromData(data);

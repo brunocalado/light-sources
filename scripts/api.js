@@ -14,12 +14,13 @@ import { getSources, setSources, makePattern, getItemTypes, getActorTypes, getQu
  * in. Also snapshotted onto the source as `moduleDefaults`, so restoring returns
  * what the module wants *now* rather than what it asked for on first registration.
  * @param {object} entry The caller's light source definition.
- * @returns {{consume: boolean, freeForAll: boolean, durationMode: string, durationMinutes: number}} The usage fields.
+ * @returns {{consume: boolean, freeForAll: boolean, coverable: boolean, durationMode: string, durationMinutes: number}} The usage fields.
  */
 function usageFields(entry) {
   return {
     consume: entry.consume ?? false,
     freeForAll: entry.freeForAll ?? false,
+    coverable: entry.coverable ?? false,
     durationMode: entry.durationMode ?? DURATION_MODES.WORLD,
     durationMinutes: entry.durationMinutes ?? 0
   };
