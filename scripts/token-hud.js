@@ -44,9 +44,12 @@ function onRenderTokenHUD(hud, html) {
     .map(source => ({ source, items: findMatchingItems(actor, source) }))
     // The lit source is always listed, even once its last item has been consumed
     // down to 0 (lighting the last torch empties the stack): its row is what
-    // carries the extinguish/drop controls for the light already burning.
-    .filter(entry => (entry.items.length > 0) || (entry.source.freeForAll && freeForAllAllowed)
-      || (entry.source.id === active?.sourceId));
+    // carries the extinguish/drop controls for the light already burning. That also
+    // makes `hudHidden` safe to apply bluntly here — a hidden source reappears the
+    // moment something lights it, carrying its controls, and vanishes again when put out.
+    .filter(entry => (entry.source.id === active?.sourceId)
+      || (!entry.source.hudHidden
+        && ((entry.items.length > 0) || (entry.source.freeForAll && freeForAllAllowed))));
   // A ground light on its own is enough to open the HUD: an actor who lit its last
   // torch and put it down carries no item and has no active light, yet must still
   // be able to reach down and take it back.

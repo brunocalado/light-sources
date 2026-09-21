@@ -190,6 +190,16 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
    */
   _onChangeForm(formConfig, event) {
     super._onChangeForm(formConfig, event);
+    // Toggling negative changes which animation types exist, so the <select>s have to
+    // be rebuilt. Routed through the draft-pattern mechanism the add/remove/restore
+    // actions already use, so the other patterns' unsaved edits survive the re-render.
+    if ( event.target?.name?.endsWith(".light.negative") ) {
+      this.#draftPatterns = this.#readFormPatterns();
+      // Not awaited (the override is synchronous), but the preview still has to catch
+      // up with the new kind of source rather than wait for the next interaction.
+      this.render().then(() => this.#applyPreviewLight());
+      return;
+    }
     this.#applyPreviewLight();
   }
 
@@ -304,6 +314,7 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
     return {
       dim: Math.max(0, Number(data.light?.dim) || 0),
       bright: Math.max(0, Number(data.light?.bright) || 0),
+      negative: !!data.light?.negative,
       angle: Math.clamp(Number.isFinite(angle) && (angle > 0) ? angle : 360, 5, 360),
       color: data.light?.color || "",
       alpha: Math.clamp(Number.isFinite(alpha) ? alpha : 0.5, 0, 1),
@@ -351,7 +362,7 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
       canRestore: !!pattern.moduleLight,
       dimPresets: this.#buildPresetOptions(pattern.light.dim, RANGE_PRESETS),
       brightPresets: this.#buildPresetOptions(pattern.light.bright, RANGE_PRESETS),
-      animationTypes: this.#buildAnimationOptions(pattern.light.animation?.type)
+      animationTypes: this.#buildAnimationOptions(pattern.light.animation?.type, pattern.light.negative)
     }));
     const mode = source.durationMode === DURATION_MODES.REAL ? DURATION_MODES.REAL : DURATION_MODES.WORLD;
     context.durationModes = [
@@ -365,11 +376,19 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
   /**
    * Build the animation-type <select> options for a pattern, with the entry
    * matching the pattern's current animation marked selected, sorted by label.
+   *
+   * Darkness and light draw from two disjoint animation sets — core itself swaps
+   * between them (see `CONFIG.Canvas.darknessAnimations`), and a type from the wrong
+   * set resolves to an empty animation config and simply renders static. Offering the
+   * right list is therefore the only thing keeping a negative pattern's animation
+   * meaningful; flipping a pattern to negative drops whatever type it had.
    * @param {string} selectedType The pattern's current animation type key.
+   * @param {boolean} negative Whether the pattern sheds darkness rather than light.
    * @returns {Array<{value: string, label: string, selected: boolean}>} The option list.
    */
-  #buildAnimationOptions(selectedType) {
-    return Object.entries(CONFIG.Canvas.lightAnimations)
+  #buildAnimationOptions(selectedType, negative) {
+    const animations = negative ? CONFIG.Canvas.darknessAnimations : CONFIG.Canvas.lightAnimations;
+    return Object.entries(animations)
       .map(([value, cfg]) => ({ value, label: game.i18n.localize(cfg.label), selected: value === selectedType }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }

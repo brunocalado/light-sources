@@ -139,6 +139,7 @@ export const CHAT_CARD_ACCENT = "#ff9838";
 export const DEFAULT_LIGHT = {
   dim: 40,
   bright: 20,
+  negative: false,
   angle: 360,
   color: "#ff8800",
   alpha: 0.4,

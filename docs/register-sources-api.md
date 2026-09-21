@@ -113,6 +113,7 @@ Each object in the `entries` array describes a single light source:
         angle: number,       //   Emission angle in degrees (360 = omnidirectional)
         color: string,       //   CSS hex color, e.g. "#ff8800"
         alpha: number,       //   Color intensity (0–1)
+        negative: boolean,   //   Shed darkness instead of light (default: false) — see below
         animation: {
           type: string,      //   Foundry animation type, e.g. "torch", "pulse", "flame"
           speed: number,     //   Animation speed (1–10)
@@ -125,6 +126,7 @@ Each object in the `entries` array describes a single light source:
   consume: boolean,          // Optional – subtract one from the item's quantity when lit; the only moment an item is ever spent (default: false)
   freeForAll: boolean,       // Optional – any actor of an Actor-Types-enabled type can light this, no inventory item needed (default: false)
   coverable: boolean,        // Optional – the light can be covered instead of ended, keeping its remaining duration (default: false)
+  hudHidden: boolean,        // Optional – never offered in the Token HUD; lit only through activate() (default: false)
   durationMode: string,      // Optional – "world" (in-game clock) or "real" (wall clock) (default: "world")
   durationMinutes: number    // Optional – minutes until the light burns out; 0 = unlimited (default: 0)
 }
@@ -145,7 +147,16 @@ Consumption and duration are shared across all patterns of the same source; only
 #### `consume`
 When `true`, **lighting** the source subtracts one from the matching item's quantity, using the quantity path configured in the module's compatibility settings. Activation is the *only* moment an item is ever spent — dropping a lit light on the ground never consumes and never refunds (see [Dropping](#dropping)). A `consume: false` source therefore never touches inventory at any point.
 
-Items are matched by `flags.core.sourceId` (the origin UUID core stamps on an embedded copy), falling back to name + type, so a source keeps working after a player renames the item on their sheet. Items whose quantity has reached 0 stop matching, but the source stays listed in the HUD while its light is still burning, so it can still be extinguished or dropped.
+Items are matched by `flags.core.sourceId` (the origin UUID core stamps on an embedded copy), falling back to name + type, so a source keeps working after a player renames the item on their sheet.
+
+Quantity only gates a source that spends it. For `consume: true`, an item whose quantity has reached 0 stops matching (though the source stays listed in the HUD while its light is still burning, so it can still be extinguished or dropped). For `consume: false` the quantity is never read, so the item matches at any value — including 0, and including a quantity path that does not resolve on that item at all. That is what lets a reusable tool be a light source in a system where the configured path is optional per item: without it, no value of `quantityPath` can make a consumable torch burn down *and* a permanent lantern appear.
+
+#### `negative`
+A pattern with `negative: true` is a **darkness source**: it dims the area inside its radii instead of revealing it, using core's own `LightData#negative`. Everything else about the pattern works unchanged — radii, angle, color, intensity, duration and consumption all behave the same, and extinguishing restores the token's own light exactly as it does for a normal pattern.
+
+Light and darkness draw from **two disjoint animation sets**. Foundry offers `torch`, `pulse`, `flame` and the rest to light sources, and `magicalGloom`, `roiling`, `hole` and `denseSmoke` to darkness sources; an animation type from the wrong set is not an error, it just renders with no animation at all. The light editor swaps the animation dropdown when the option is toggled, so a pattern flipped to negative loses whatever animation type it previously had. When registering a negative pattern in code, pick its `animation.type` from the darkness set or leave it empty.
+
+Negative is a property of the **pattern**, not of the source, so one source can own both a light pattern and a darkness pattern and the Token HUD offers them side by side.
 
 #### `freeForAll`
 When `true`, the source appears in the Token HUD only for actor types enabled in the module's compatibility settings (the "Actor Types" tab) — it needs no inventory item, and the item is never consumed. Useful for ambient environmental effects ("everyone eligible can see in this magically lit area").
@@ -178,6 +189,63 @@ Controls how the countdown timer works:
 | :--- | :--- |
 | `"world"` | Burns down as the GM advances the in-game world clock. Stays lit while the clock is still. |
 | `"real"` | Burns down in real-world minutes, even while the game is paused or the owning player is offline. |
+
+#### `hudHidden`
+When `true`, the source is **never offered in the Token HUD palette** while it is unlit. It can only be lit through [`activate`](#activateactor-uuid-options) — which is the point: for a source whose real cost is a spell slot, a fatigue token or anything else only the game system knows how to charge, a palette entry is a way to get the light without paying for it.
+
+A source that is currently lit is always listed, `hudHidden` or not, because that row is what carries the extinguish, drop and cover controls. So the practical behaviour is: invisible while off, appears the moment something lights it, disappears again when it is put out.
+
+This pairs with `consume: false` in most cases — the module is not charging anything, the caller already did.
+
+---
+
+## `activate(actor, uuid, options?)`
+
+Lights a registered source on an actor, exactly as clicking it in the Token HUD would: same consumption, same duration, same chat announcement, and the same one-light-per-actor rule.
+
+```js
+const lit = await game.lightSources.activate(actor, "Compendium.my-system.spells.Item.light01");
+const lit = await game.lightSources.activate(actor, sourceUuid, { pattern: "Narrow Beam" });
+```
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `actor` | `Actor` | The actor to light. **Must be owned by the current user.** |
+| `uuid` | `string` | The registered source's `uuid`, or its internal `id`. A source the GM added by name has no uuid and is reachable only by id. |
+| `options.pattern` | `string` | Name of the pattern to light. Defaults to the source's first pattern. |
+
+Returns `Promise<boolean>` — `true` when the source is now lit, `false` when it was refused. It is refused when no source is registered for that key, when the named pattern does not exist, when the current user does not own the actor, or when a `consume: true` source's item is no longer carried.
+
+**Ownership.** Foundry refuses embedded document creation on an actor the current user does not own, so from a player's client this reaches their own character and nothing else; from the GM's client it reaches anyone. This is checked up front and reported as `false` rather than left to throw. There is deliberately **no relay** that would let one player light a light on another player's actor — routing that through the GM would mean any client could ask the GM to write ActiveEffects onto any actor, which is a larger permission surface than this module is willing to open. If your system needs to light someone else's character, run that part of the flow on the GM's client.
+
+**Consumption is not bypassed.** `activate` spends exactly what a HUD click would. A caller that wants no consumption should register the source with `consume: false`.
+
+**The Restrict Player Control setting does not apply.** That world setting gates the Token HUD palette; this path is not the palette. Whatever charged the light has already run, and a caller can only ever reach an actor it already owns.
+
+---
+
+## `deactivate(actor)`
+
+Puts out whatever light is burning on the actor, exactly as the Token HUD's extinguish control does. A no-op when nothing is lit.
+
+```js
+await game.lightSources.deactivate(actor);
+```
+
+Returns `Promise<void>`.
+
+---
+
+## `getActive(actor)`
+
+Reads what is currently burning on an actor.
+
+```js
+const light = game.lightSources.getActive(actor);
+// → null, or { sourceId, patternId, patternName, itemName, mode, expiresAtWorld, expiresAtReal, stowed }
+```
+
+Returns the active light payload, or `null` when the actor has no light lit. `stowed` is `true` while the light is covered (see [`coverable`](#coverable)). `expiresAtWorld` / `expiresAtReal` are absolute stamps and are `null` for a source with no duration.
 
 ---
 
@@ -320,16 +388,49 @@ Hooks.once("ready", async () => {
       freeForAll: true,
       coverable: true,
       durationMinutes: 0
+    },
+    {
+      // A spell, not an object. Its cost is a spell slot, which this module cannot
+      // see or charge — so it is kept out of the Token HUD and lit from the cast.
+      uuid: "Compendium.my-system.spells.Item.daylight01",
+      patterns: [
+        {
+          name: "Daylight",
+          light: {
+            dim: 60,
+            bright: 30,
+            angle: 360,
+            color: "#fff4d6",
+            alpha: 0.5,
+            animation: { type: "sunburst", speed: 2, intensity: 4, reverse: false }
+          }
+        }
+      ],
+      consume: false,
+      hudHidden: true,
+      durationMode: "world",
+      durationMinutes: 600
     }
   ], { managedBy: "my-system" });
 });
 ```
+
+Lighting that last one is the casting flow's job, not the palette's:
+
+```js
+// Inside your system's own spell-cast handler, after the slot has been spent.
+const lit = await game.lightSources.activate(actor, "Compendium.my-system.spells.Item.daylight01");
+if ( !lit ) ui.notifications.warn("The light failed to take hold.");
+```
+
+A darkness spell is the same entry with `negative: true` on the pattern and an `animation.type` from the [darkness set](#light-animation-types).
 
 In this example:
 - **`registerCompatibility`** — seeds Item Types, Actor Types, and the quantity path, but only for whichever of those three the GM hasn't already touched.
 - **Torch** — consumed on use, lasts 60 in-game minutes, single pattern.
 - **Lantern** — consumed on use, lasts 4 in-game hours, two selectable brightness patterns.
 - **Magic Glow** — free for all actors of a type listed in `actorTypes` above, never consumed, unlimited duration, and coverable: it is a spell on an object, so it can be pocketed and taken back out rather than only destroyed.
+- **Daylight** — hidden from the Token HUD and lit only by [`activate`](#activateactor-uuid-options), because the spell slot it costs is something only the system can charge. A player cannot reach it from the palette and so cannot get the light without paying for it; once lit, its row appears with a working extinguish control for as long as it lasts.
 
 ---
 
@@ -346,24 +447,45 @@ In this example:
 
 ## Light Animation Types
 
-Foundry's built-in animation types you can use in the `animation.type` field:
+Foundry keeps **two separate animation sets**, and which one applies depends on the pattern's [`negative`](#negative) flag. A type from the wrong set is not an error — it resolves to an empty animation configuration and the source simply renders static — so a darkness pattern must take its `animation.type` from the darkness table below.
 
-| Type | Description |
+### Light sources (`negative: false`, the default)
+
+| Type | Name in the UI |
 | :--- | :--- |
-| `"torch"` | Flickering torch flame |
-| `"pulse"` | Gentle pulsing glow |
-| `"chroma"` | Color-shifting chromatic light |
-| `"wave"` | Oscillating wave pattern |
-| `"flame"` | Smooth flame animation (v2) |
-| `"fog"` | Swirling fog effect |
-| `"sunburst"` | Radiant sunburst |
-| `"dome"` | Dome-shaped emanation |
-| `"emanation"` | Mystical emanation |
-| `"hexa"` | Hexagonal grid pattern |
-| `"ghost"` | Ghostly flickering |
-| `"energy"` | Energy field |
-| `"roiling"` | Roiling mass |
-| `"hole"` | Black hole effect |
+| `"flame"` | Torch |
+| `"torch"` | Flickering Light |
+| `"revolving"` | Revolving Light |
+| `"siren"` | Siren Light |
+| `"pulse"` | Pulse |
+| `"reactivepulse"` | Sound-Reactive Pulse |
+| `"chroma"` | Chroma |
+| `"wave"` | Pulsing Wave |
+| `"fog"` | Swirling Fog |
+| `"sunburst"` | Sunburst |
+| `"dome"` | Light Dome |
+| `"emanation"` | Mysterious Emanation |
+| `"hexa"` | Hexa Dome |
+| `"ghost"` | Ghostly Light |
+| `"energy"` | Energy Field |
+| `"vortex"` | Vortex |
+| `"witchwave"` | Bewitching Wave |
+| `"rainbowswirl"` | Swirling Rainbow |
+| `"radialrainbow"` | Radial Rainbow |
+| `"fairy"` | Fairy Light |
+| `"grid"` | Force Grid |
+| `"starlight"` | Star Light |
+| `"smokepatch"` | Smoke Patch |
 | `""` or `null` | No animation (static light) |
 
-> **Note**: Available animation types may vary by Foundry VTT version. The values above are for Foundry V14.
+### Darkness sources (`negative: true`)
+
+| Type | Name in the UI |
+| :--- | :--- |
+| `"magicalGloom"` | Magical Gloom |
+| `"roiling"` | Roiling Mass |
+| `"hole"` | Black Hole |
+| `"denseSmoke"` | Dense Smoke |
+| `""` or `null` | No animation (static darkness) |
+
+> **Note**: Available animation types vary by Foundry VTT version. The values above are read from Foundry V14's `CONFIG.Canvas.lightAnimations` and `CONFIG.Canvas.darknessAnimations`, which are also what the light editor's dropdown is built from — so whatever a given install offers, the editor and this table agree with it.

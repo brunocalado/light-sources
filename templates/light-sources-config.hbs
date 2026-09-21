@@ -56,6 +56,11 @@
                 aria-pressed="{{this.freeForAll}}">
           <i class="fa-solid fa-wand-magic-sparkles" inert></i>
         </button>
+        <button type="button" data-action="toggleHudHidden" class="ls-toggle-hidden{{#if this.hudHidden}} ls-active{{/if}}"
+                data-tooltip="{{localize 'LIGHTSOURCES.Config.HudHidden'}}" aria-label="{{localize 'LIGHTSOURCES.Config.HudHidden'}}"
+                aria-pressed="{{this.hudHidden}}">
+          <i class="fa-solid fa-eye-slash" inert></i>
+        </button>
         <button type="button" data-action="editSource" data-tooltip="{{localize 'LIGHTSOURCES.Config.Edit'}}"
                 aria-label="{{localize 'LIGHTSOURCES.Config.Edit'}}">
           <i class="fa-solid fa-pen-to-square" inert></i>

@@ -1,3 +1,25 @@
+# 0.0.9
+
+### Added
+
+* **Darkness sources.** A light pattern can now be marked **Darkness Source** in the light editor: it dims the area inside its radii instead of revealing it, using core's own negative-light support. Everything else about the pattern is unchanged — radii, angle, color, intensity, consumption and duration all behave the same, dropping one on the ground places a darkness light, and extinguishing restores the token's own light as before.
+
+  Light and darkness draw from two completely separate animation sets in Foundry, so the animation dropdown swaps to the darkness animations when the option is switched on. A pattern flipped to negative therefore loses whatever animation type it had — the old value would not have rendered anything anyway. `negative` is a property of the pattern, not the source, so a single source can own both a light pattern and a darkness pattern and offer them side by side in the Token HUD.
+
+* **Light a source from code.** The public API gains three functions: `activate(actor, uuid, options?)` lights a registered source exactly as a Token HUD click would (same consumption, same duration, same chat announcement) and reports whether it happened; `deactivate(actor)` puts the light out; `getActive(actor)` reads back what is burning. See `docs/register-sources-api.md`.
+
+  This exists for a light whose real cost is not a quantity — a spell slot, a fatigue token, a resource only the game system knows how to charge. The system charges it and then lights the source, instead of the module trying to model a cost it cannot see. The caller must own the actor: from a player's client that means their own character, and there is deliberately no relay that would let one player light a light on another player's actor.
+
+* **Keep a source out of the Token HUD.** New per-source toggle in the Light Sources config window (the eye icon, beside Free for All): while set, the source is never offered in the palette and can only be lit through `activate`. Without it, a player could click the palette entry and get the light without paying whatever the system charges for it.
+
+  A lit source is still listed whether or not it is hidden, because that row carries the extinguish, drop and cover controls. So it is invisible while off, appears the moment something lights it, and disappears again once it is put out. `hudHidden` is accepted by `registerSources` like the other usage fields: it freezes once the GM edits the source, and comes back with **Restore Module Default**.
+
+### Fixed
+
+* **A reusable light source no longer disappears when its item quantity is 0.** The item-quantity check was gating whether a source appears in the Token HUD at all, not just whether it can be spent — so "this item is empty" and "this item cannot be a light source" were the same test. A source registered with `consume: false` never spends anything, so its item now matches at any quantity, including 0 and including a quantity path that does not resolve on that item.
+
+  This only mattered in systems where the configured quantity path is optional per item and rests at 0, where it made a whole shape of content impossible to express: no value of the quantity path could make a consumable torch burn down *and* a permanent lantern appear. Consuming sources are unaffected — an item worn down to 0 still stops matching, and a source still stays listed while its light is burning so it can be put out or dropped.
+
 # 0.0.8
 
 ### Added

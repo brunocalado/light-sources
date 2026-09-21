@@ -172,7 +172,8 @@
       line-height: 28px;
     }
 
-    .ls-toggle-free.ls-active {
+    .ls-toggle-free.ls-active,
+    .ls-toggle-hidden.ls-active {
       border-color: var(--light-sources-accent);
 
       i {

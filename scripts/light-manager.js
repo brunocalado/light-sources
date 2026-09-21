@@ -88,6 +88,9 @@ function buildLightChanges(pattern) {
     entry("token.light.angle", Number(light.angle) || 360),
     entry("token.light.color", light.color || null),
     entry("token.light.alpha", Number.isFinite(alpha) ? alpha : 0.5),
+    // Written even when false: an unset key would leave a token whose own light is a
+    // darkness source emitting darkness at this pattern's radii.
+    entry("token.light.negative", !!light.negative),
     entry("token.light.animation.type", anim.type || ""),
     entry("token.light.animation.speed", Number(anim.speed) || 5),
     entry("token.light.animation.intensity", Number(anim.intensity) || 5),
@@ -212,21 +215,24 @@ async function createLightEffect(actor, source, pattern, timing, { stowed = fals
  *   may own several patterns (e.g. a flashlight's wide vs. narrow beam);
  *   consumption and duration are shared across all of them, only the emitted
  *   light shape differs.
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>} True when the source is now lit. False when it was
+ *   refused — the actor no longer carries the item a consuming source needs. The
+ *   Token HUD ignores this; the public `activate` API reports it to its caller.
  */
 export async function activateLight(actor, source, pattern) {
   // Matched on the source alone, not the pattern: a source's patterns are ways for
   // the same flame to burn, so moving between them is never a new light.
   const effect = getLightEffect(actor);
   if ( effect?.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT)?.sourceId === source.id ) {
-    return switchPattern(actor, effect, pattern);
+    await switchPattern(actor, effect, pattern);
+    return true;
   }
 
   if ( source.consume && !source.freeForAll ) {
     const item = findMatchingItems(actor, source)[0];
     if ( !item ) {
       ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Hud.NoItem", { name: actor.name, item: source.name }));
-      return;
+      return false;
     }
     // Only decrement when a quantity path is configured and resolves to a
     // number; otherwise the item has no tracked quantity to spend.
@@ -239,7 +245,7 @@ export async function activateLight(actor, source, pattern) {
 
   await createLightEffect(actor, source, pattern, buildTiming(source));
 
-  if ( !getAnnounceLit() ) return;
+  if ( !getAnnounceLit() ) return true;
 
   // Name the pattern only when the source has more than one: a lone pattern is
   // the implicit default and its name carries no information (it may be empty).
@@ -249,6 +255,7 @@ export async function activateLight(actor, source, pattern) {
   await ChatMessage.implementation.createDocuments([
     buildLightMessage(actor, game.i18n.localize("LIGHTSOURCES.Chat.LitTitle"), announcement)
   ]);
+  return true;
 }
 
 /**

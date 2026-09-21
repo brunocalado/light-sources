@@ -36,6 +36,7 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
       openItem: this.prototype._onOpenItem,
       sendToChat: this.prototype._onSendToChat,
       toggleFreeForAll: this.prototype._onToggleFreeForAll,
+      toggleHudHidden: this.prototype._onToggleHudHidden,
       editSource: this.prototype._onEditSource,
       restoreDefault: this.prototype._onRestoreDefault,
       deleteSource: this.prototype._onDeleteSource
@@ -136,6 +137,7 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
       consume: false,
       freeForAll: false,
       coverable: false,
+      hudHidden: false,
       durationMode: DURATION_MODES.WORLD,
       durationMinutes: 0,
       patterns: [makePattern(DEFAULT_LIGHT, game.i18n.localize("LIGHTSOURCES.Patterns.Standard"))]
@@ -188,6 +190,7 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
       consume: false,
       freeForAll: false,
       coverable: false,
+      hudHidden: false,
       durationMode: DURATION_MODES.WORLD,
       durationMinutes: 0,
       patterns: [makePattern(DEFAULT_LIGHT, game.i18n.localize("LIGHTSOURCES.Patterns.Standard"))]
@@ -258,6 +261,30 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
     const source = sources.find(s => s.id === sourceId);
     if ( !source ) return;
     source.freeForAll = !source.freeForAll;
+    // Freeze the source against the next registerSources call, exactly as saving
+    // the light editor does (see `_onFormSubmit` in light-editor.js).
+    if ( source.moduleDefaults ) source.customized = true;
+    await setSources(sources);
+    this.render();
+  }
+
+  /**
+   * Toggle the clicked source's "hidden from the Token HUD" flag: while set, the
+   * source is not offered in the palette and can only be lit through the module's
+   * `activate` API — which is the point, for a source whose real cost is charged by
+   * a game system before the light exists. A lit source is listed regardless (see
+   * `onRenderTokenHUD` in `token-hud.js`), so the light can always be put out.
+   * Declared in DEFAULT_OPTIONS.actions.
+   * @param {PointerEvent} event The originating click event.
+   * @param {HTMLElement} target The element bearing the data-action.
+   * @returns {Promise<void>}
+   */
+  async _onToggleHudHidden(event, target) {
+    const sourceId = target.closest("[data-source-id]")?.dataset.sourceId;
+    const sources = getSources();
+    const source = sources.find(s => s.id === sourceId);
+    if ( !source ) return;
+    source.hudHidden = !source.hudHidden;
     // Freeze the source against the next registerSources call, exactly as saving
     // the light editor does (see `_onFormSubmit` in light-editor.js).
     if ( source.moduleDefaults ) source.customized = true;

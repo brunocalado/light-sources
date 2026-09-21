@@ -143,18 +143,26 @@ export function listDocumentTypes(documentName) {
  * yields nothing (the flag is missing/stripped, or the source has no `uuid`
  * at all because it was registered by name only), matching falls back to name
  * (and, when the source has a `type`, that type too — a name-only source has
- * no type and matches by name alone). Items whose quantity has been consumed
- * down to 0 are excluded: they are kept in the inventory rather than deleted,
- * but stop being available for consumption or display in the Token HUD. Items
- * whose quantity cannot be determined (no quantity path configured) are always
- * treated as available.
+ * no type and matches by name alone).
+ *
+ * Quantity gates only a source that spends what it matches. For a consuming
+ * source, an item worn down to 0 is excluded: it is kept in the inventory rather
+ * than deleted, but stops being available for consumption or display in the Token
+ * HUD. A non-consuming source never reads the number, so its item matches at any
+ * quantity — which is what lets a reusable tool (a lantern, a glowing blade) work
+ * in a system where the configured path is optional per item and rests at 0.
+ * Items whose quantity cannot be determined (no quantity path configured) are
+ * always treated as available.
  * @param {Actor} actor The actor whose inventory is searched.
  * @param {object} source A light source definition ({name, type, uuid, ...}).
  *   `type` and `uuid` may be null/absent for a source registered by name only.
- * @returns {Item[]} The matching embedded Items with quantity remaining.
+ * @returns {Item[]} The matching embedded Items available to this source.
  */
 export function findMatchingItems(actor, source) {
   const available = item => {
+    // "Empty" and "not a light source" are different questions: only the item that
+    // will actually be spent is gated on its quantity.
+    if ( !source.consume ) return true;
     const quantity = getItemQuantity(item);
     return !Number.isFinite(quantity) || (quantity > 0);
   };

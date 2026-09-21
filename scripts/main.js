@@ -12,7 +12,7 @@ import { CompatibilityConfig } from "./compatibility-config.js";
 import { registerTokenHudHooks } from "./token-hud.js";
 import { registerInteractiveLightHooks } from "./interactive-lights.js";
 import { startExpiryTicker, sweepExpiredLights, handleSocketMessage } from "./light-manager.js";
-import { registerSources, registerCompatibility } from "./api.js";
+import { registerSources, registerCompatibility, activate, deactivate, getActive } from "./api.js";
 
 Hooks.once("init", () => {
   // Seed the compatibility settings from the active system's preset (if any) so
@@ -103,7 +103,7 @@ Hooks.once("ready", () => {
   // the GM drag-and-drop UI. Exposed both via Foundry's formal module.api and a
   // convenience `game.lightSources` alias. Assigned in `ready` so settings are
   // available and compendium UUIDs can be resolved by callers.
-  const api = { registerSources, registerCompatibility };
+  const api = { registerSources, registerCompatibility, activate, deactivate, getActive };
   game.modules.get(MODULE_ID).api = api;
   game.lightSources = api;
 });

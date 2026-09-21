@@ -8,19 +8,21 @@
 
 import { MODULE_ID, SETTINGS, DURATION_MODES } from "./constants.js";
 import { getSources, setSources, makePattern, getItemTypes, getActorTypes, getQuantityPath } from "./helpers.js";
+import { activateLight, deactivateLight, getActiveLight } from "./light-manager.js";
 
 /**
  * The usage fields a caller supplies, with the API's documented defaults filled
  * in. Also snapshotted onto the source as `moduleDefaults`, so restoring returns
  * what the module wants *now* rather than what it asked for on first registration.
  * @param {object} entry The caller's light source definition.
- * @returns {{consume: boolean, freeForAll: boolean, coverable: boolean, durationMode: string, durationMinutes: number}} The usage fields.
+ * @returns {{consume: boolean, freeForAll: boolean, coverable: boolean, hudHidden: boolean, durationMode: string, durationMinutes: number}} The usage fields.
  */
 function usageFields(entry) {
   return {
     consume: entry.consume ?? false,
     freeForAll: entry.freeForAll ?? false,
     coverable: entry.coverable ?? false,
+    hudHidden: entry.hudHidden ?? false,
     durationMode: entry.durationMode ?? DURATION_MODES.WORLD,
     durationMinutes: entry.durationMinutes ?? 0
   };
@@ -172,4 +174,77 @@ export async function registerCompatibility({ itemTypes, actorTypes, quantityPat
   if ( quantityPath && !getQuantityPath() ) {
     await game.settings.set(MODULE_ID, SETTINGS.QUANTITY_PATH, quantityPath);
   }
+}
+
+/**
+ * Light a registered source on an Actor, exactly as clicking it in the Token HUD
+ * would: the same consumption, the same duration, the same chat announcement, and
+ * the same one-light-per-actor rule. Meant for a cost the module cannot express as
+ * a quantity — a spell slot, a fatigue token, a resource only the game system knows
+ * how to charge. The system charges it, then calls this; pair it with `hudHidden`
+ * so the Token HUD cannot be used to skip the charge.
+ *
+ * The caller must be able to write to `actor`. Foundry refuses embedded document
+ * creation on an Actor the current user does not own, so from a player's client this
+ * reaches their own character and nothing else; from the GM's it reaches anyone.
+ * Ownership is checked up front and reported as `false` rather than left to throw.
+ * There is deliberately no relay that would let one player light another's actor.
+ *
+ * The GM's **Restrict Player Control** setting is not consulted here. It gates the
+ * Token HUD palette, and this path is not the palette: whatever charged the light
+ * has already run, and a caller can only ever reach an actor it already owns.
+ * @param {Actor} actor The actor to light. Must be owned by the current user.
+ * @param {string} uuid The registered source's `uuid`, or its internal `id` (a source
+ *   the GM added by name has no uuid, and is only reachable by id).
+ * @param {object} [options={}]
+ * @param {string} [options.pattern] Name of the pattern to light. Defaults to the
+ *   source's first pattern.
+ * @returns {Promise<boolean>} True when the source is now lit.
+ */
+export async function activate(actor, uuid, { pattern } = {}) {
+  if ( !actor ) {
+    console.warn(`${MODULE_ID} | activate called without an actor.`);
+    return false;
+  }
+  if ( !actor.isOwner ) {
+    console.warn(`${MODULE_ID} | Cannot light "${actor.name}": the current user does not own that actor.`);
+    return false;
+  }
+
+  const source = getSources().find(s => (s.uuid === uuid) || (s.id === uuid));
+  if ( !source ) {
+    console.warn(`${MODULE_ID} | No light source registered for "${uuid}".`);
+    return false;
+  }
+
+  // Patterns are selected by name because that is what a caller registered them
+  // under; internal ids are minted by this module and never travel outward.
+  const target = pattern ? source.patterns.find(p => p.name === pattern) : source.patterns[0];
+  if ( !target ) {
+    console.warn(`${MODULE_ID} | Light source "${source.name}" has no pattern named "${pattern}".`);
+    return false;
+  }
+
+  return activateLight(actor, source, target);
+}
+
+/**
+ * Put out whatever light is burning on an Actor, exactly as the Token HUD's
+ * extinguish control does. A no-op when nothing is lit.
+ * @param {Actor} actor The actor whose light is extinguished.
+ * @returns {Promise<void>}
+ */
+export async function deactivate(actor) {
+  return deactivateLight(actor);
+}
+
+/**
+ * Read what is currently burning on an Actor, so a caller can tell whether a light
+ * is lit, which source and pattern it came from, and when it runs out.
+ * @param {Actor} actor The actor to inspect.
+ * @returns {object|null} The active light payload ({sourceId, patternId, patternName,
+ *   itemName, mode, expiresAtWorld, expiresAtReal, stowed}), or null when unlit.
+ */
+export function getActive(actor) {
+  return getActiveLight(actor);
 }

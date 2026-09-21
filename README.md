@@ -22,6 +22,7 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 * 🎒 **Uses the real inventory.** Only items the character actually owns show up (plus any "Free for All" sources the GM has enabled — see below). Lighting a torch can subtract it from the sheet, so a torch you burn is a torch you no longer have.
 * ⏳ **Lights burn out on their own.** Give a source a duration and it goes out by itself when the time runs out — with a message in chat announcing it. No timers to babysit. Pick how each source counts down: **in-game time** (it burns as the GM advances the world clock — three real hours of chatter won't waste a torch) or **real time** (it burns in real-world minutes even while the game is paused or the player is offline). Hover the flame button on the Token HUD to see what's burning and how much of it is left — no clutter on the map, just the number when you ask for it.
 * 🎨 **A look for every flame.** Each source gets its own light pattern: radius, angle, color, brightness and animation. A candle should feel nothing like a bullseye lantern, and here it doesn't.
+* 🌑 **Darkness, too.** Tick **Darkness Source** on a pattern and it sheds darkness instead of light — the area inside its radius gets dimmer, not brighter. Everything else works the same: it burns down, it can be dropped, it can be picked back up. A single item can even carry one light pattern and one darkness pattern side by side.
 * 🔀 **Multiple patterns per source.** A single item can have more than one way to shine. A lantern might have a "Low" mode with a soft glow and a "High" mode that fills the room — both appear in the Token HUD, and the player just picks the one they want. Switching between them is free: it reshapes the flame that's already burning, so it never spends a second item and never restarts the countdown.
 * 👀 **See it before you save it.** While you edit a light pattern, the change is previewed live on the selected token. Tweak until it looks right — nothing is written until you hit Save.
 * 🆓 **Free-for-all lights.** Mark a light source as "Free for All" and every character of an actor type you've enabled can use it, even if they don't carry the item — perfect for magical environmental effects, a bonfire everyone sits around, or a glowing aura that doesn't cost inventory. Regular, item-based sources are never restricted this way: carrying the item is always enough, regardless of actor type.
@@ -35,7 +36,7 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 * 🗺️ **The light follows the character.** It stays with them across scenes, and blowing it out restores exactly the token lighting they had before.
 * 💬 **Chat announcements.** Lighting a source, dropping it on the ground, picking it back up and burning out each post a styled chat card, so the table always knows who has light and who just lost it. Switching between a source's own patterns stays quiet — that's the same flame reshaped, not a new one. Lighting announcements can be turned off entirely in the world settings if your table finds them noisy. You can also send any registered light source to chat as a draggable card — drop it on an actor sheet to add it to their inventory.
 * 🔒 **GM-only mode.** A world setting locks the Token HUD's light controls to the GM alone — players still see what's lit, but activating, extinguishing, dropping and picking up sources becomes the GM's call.
-* 🔌 **Developer API.** Module and system developers can [programmatically register light sources](docs/register-sources-api.md) from their own code — no manual drag-and-drop needed. Registered sources merge seamlessly with the GM's hand-picked ones.
+* 🔌 **Developer API.** Module and system developers can [programmatically register light sources](docs/register-sources-api.md) from their own code — no manual drag-and-drop needed. Registered sources merge seamlessly with the GM's hand-picked ones. They can also **light a source from code**, for lights whose cost isn't an item — a spell slot, a fatigue token, anything only the system knows how to charge — and keep such a source **out of the Token HUD**, so the light only ever comes through the system's own cast.
 
 ## 🛠️ How to Use
 
@@ -50,7 +51,7 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
    ![Registering a light source](docs/add-light-source.webp)
 
 3. Click the ✏️ pencil on any entry to shape it:
-   * **Patterns** — add one or more light patterns for the same item (different radii, colors, animations). A lone pattern needs no name; add a second and each gets its own label in the HUD.
+   * **Patterns** — add one or more light patterns for the same item (different radii, colors, animations). A lone pattern needs no name; add a second and each gets its own label in the HUD. Tick **Darkness Source** on a pattern to make it shed darkness instead of light; the animation list swaps to Foundry's darkness animations when you do.
 
      ![Configuring a light pattern](docs/config-light-source.webp)
 
@@ -62,6 +63,7 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 
 Optional per-source toggles on the config window:
 * **Free for All** — when enabled, every actor of an enabled Actor Type can light this source without carrying the item.
+* **Hide from Token HUD** — the source never shows in the flame menu while it's unlit, so it can only be lit by a system or module through the API (see [For Developers](#-for-developers)). Once lit it appears as usual, with its Extinguish control, until it goes out. Meant for spell lights whose real cost the system charges before the light exists.
 * **Send to Chat** — posts a draggable item card that can be dropped onto actor sheets.
 
 There are also a few world settings under **Game Settings → Configure Settings → Light Sources**:
@@ -135,6 +137,8 @@ Hooks.once("ready", async () => {
 ```
 
 Registered sources appear in the Token HUD and in the GM's configuration window with a badge showing which module manages them.
+
+The same API can **light a registered source from code** — `game.lightSources.activate(actor, uuid)` — with the same consumption, duration and chat announcement a Token HUD click would have, plus `deactivate(actor)` and `getActive(actor)`. Pair it with the **Hide from Token HUD** toggle (or `hudHidden: true` when registering) for a light whose cost is a spell slot or similar: the system charges it, then lights it, and the player can't skip the charge from the palette.
 
 Registered values are **defaults, not locks**: once the GM edits one of these sources it stops being overwritten, and a **Restore Module Default** control puts it back — either for the whole source, or for a single light pattern. See the [Register Sources API docs](docs/register-sources-api.md#gm-customization-important) for the full contract.
 
