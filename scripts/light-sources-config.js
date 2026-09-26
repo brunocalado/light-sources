@@ -124,7 +124,10 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
       return;
     }
     const sources = getSources();
-    if ( sources.some(s => (s.name === item.name) && (s.type === item.type)) ) {
+    // Same uuid catches one compendium entry seen under another language's name; same
+    // name + type stays blocked because two such sources would fight over the same
+    // items through findMatchingItems' name fallback.
+    if ( sources.some(s => (s.uuid === item.uuid) || ((s.name === item.name) && (s.type === item.type))) ) {
       ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Config.Duplicate", { name: item.name }));
       return;
     }

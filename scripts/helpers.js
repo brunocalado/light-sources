@@ -137,10 +137,12 @@ export function listDocumentTypes(documentName) {
 /**
  * Find the items in an Actor's inventory matching a registered light source,
  * using a two-tier strategy. When the source has a `uuid` (it was registered
- * by dragging a real Item), items are first matched by `flags.core.sourceId`
- * — the origin UUID core stamps on an embedded item copy — so a source keeps
- * matching even after the player renames the item on their sheet. If that
- * yields nothing (the flag is missing/stripped, or the source has no `uuid`
+ * by dragging a real Item), items are first matched by `_stats.compendiumSource`
+ * — the origin UUID core stamps on a copy made from a compendium (v14 no longer
+ * writes the old `flags.core.sourceId`) — so a source keeps matching even after
+ * the player renames the item on their sheet, or a translation module renames it.
+ * If that yields nothing (the item was not copied from that compendium entry, e.g.
+ * it came from a world Item, or the source has no `uuid`
  * at all because it was registered by name only), matching falls back to name
  * (and, when the source has a `type`, that type too — a name-only source has
  * no type and matches by name alone).
@@ -168,8 +170,8 @@ export function findMatchingItems(actor, source) {
   };
 
   if ( source.uuid ) {
-    const bySourceId = actor.items.filter(i => (i.getFlag("core", "sourceId") === source.uuid) && available(i));
-    if ( bySourceId.length ) return bySourceId;
+    const bySource = actor.items.filter(i => (i._stats?.compendiumSource === source.uuid) && available(i));
+    if ( bySource.length ) return bySource;
   }
 
   return actor.items.filter(i => {

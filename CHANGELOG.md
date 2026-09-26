@@ -1,3 +1,12 @@
+# 0.1.0
+
+### Fixed
+
+* **Light sources keep matching their items when the name changes.** An item was meant to be recognised by its origin first and its name only as a fallback, but the origin check read `flags.core.sourceId`, which Foundry v14 no longer writes — so every item was matched by name. A source then stopped lighting when the item's name and the registered name drifted apart: a player renaming "Torch" to "Aldo's Torch", a translation module switched on (or off, or to another language) after the world was created, while the torches already on character sheets kept their old name. Matching now reads `_stats.compendiumSource`, where v14 records the origin, so any copy that came from the registered compendium entry matches under any name. Items with no origin, and sources registered by name only, still match by name as before.
+
+* **Dragging the same item into the config window twice is caught in any language.** The duplicate check compared name and type only, so the same compendium entry seen under a translated name registered a second time. It now also refuses an item whose UUID is already registered. The name-and-type check stays, because two sources sharing a name would compete for the same items through the name fallback.
+
+
 # 0.0.9
 
 ### Added
