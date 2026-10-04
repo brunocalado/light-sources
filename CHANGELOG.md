@@ -1,3 +1,10 @@
+# 0.8.1
+
+### Fixed
+
+* **Italian translation updated** (#18, thanks @GregoryWarn). Adds the missing strings for the refused-light notice and the effect expiry event, and tightens the wording of the running-low option.
+
+
 # 0.8.0
 
 ### Added
