@@ -141,8 +141,8 @@
         "AdvancedEnabled": "Usa opzioni avanzate",
         "AdvancedEnabledHint": "Disattivato: il token mantiene le proprie opzioni avanzate di luce e una luce lasciata a terra usa i valori predefiniti di Foundry. Attivato: questo schema le imposta, in mano e a terra. Non disponibile per una fonte di oscurità.",
         "Ending": "In esaurimento",
-        "EndingEnabled": "Usa un aspetto in esaurimento",
-        "EndingEnabledHint": "Disattivato: questo schema mantiene l'aspetto qui sopra finché non si spegne. Attivato: negli ultimi minuti, impostati da Fase di esaurimento nella scheda Consumo, la luce assume invece questo aspetto, su un token o a terra, coperta o no.",
+        "EndingEnabled": "Usa aspetto in esaurimento",
+        "EndingEnabledHint": "Disattivato: questa opzione mantiene l'aspetto qui sopra finché non si spegne. Attivato: negli ultimi minuti, impostati da Fase di esaurimento nella scheda Consumo, la luce assume invece questo aspetto, su un token o a terra, coperta o no.",
         "Consume": "L'accensione consuma",
         "ConsumeModes": {
           "none": "Niente",
@@ -188,6 +188,7 @@
       "NoGm": "Nessun GM è connesso per posizionare la luce. Chiedi a un GM di effettuare l'accesso e riprova.",
       "NoItem": "{name} non possiede più {item}.",
       "OnGround": "La luce di {item} si trova a terra. Raccoglila invece di accenderla di nuovo.",
+      "Refused": "{item} non può essere accesa su {name}: il sistema di gioco o un altro modulo hanno rifiutato l'effetto luminoso.",
       "GmOnly": "Solo il GM può controllare le fonti di luce."
     },
     "Interactive": {
@@ -209,6 +210,9 @@
       "GroundExpiredTitle": "La luce si spegne",
       "GroundExpired": "La fonte di luce {item} lasciata a terra si esaurisce.",
       "DragHint": "Trascina su una scheda Attore per aggiungerla al suo inventario."
+    },
+    "Effect": {
+      "ExpiryEvent": "Le Fonti di Luce si consumano"
     }
   }
 }
