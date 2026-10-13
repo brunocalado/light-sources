@@ -50,6 +50,12 @@
       "name": "Italiano",
       "path": "languages/it.json",
       "flags": {}
+    },
+    {
+      "lang": "fr",
+      "name": "Français",
+      "path": "languages/fr.json",
+      "flags": {}
     }
   ],
   "url": "https://github.com/brunocalado/light-sources",

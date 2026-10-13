@@ -1,0 +1,216 @@
+{
+  "LIGHTSOURCES": {
+    "Settings": {
+      "Menu": {
+        "Name": "Sources lumineuses",
+        "Label": "Configurer les sources lumineuses",
+        "Hint": "Enregistrer les objets comme sources lumineuses et configurer leur motif de lumière, consomption et durée. Seulement pour le MJ."
+      },
+      "Compat": {
+        "Name": "Compatibilité avec le système",
+        "Label": "Configurer la compatibilité avec le système",
+        "Hint": "Choisir les objets et types d'acteur du système qui seront utilisés par ce module, et où la quantité d'un objet est stockée. Seulement pour le MJ."
+      },
+      "Transfer": {
+        "Name": "Importer et exporter",
+        "Label": "Importer ou exporter des sources lumineuses",
+        "Hint": "Copier les sources lumineuses de ce Monde et les réglages de compatibilité avec le système vers un fichier JSON, ou les charger depuis un autre créé dans un autre Monde. Seulement pour le MJ."
+      },
+      "AllowFreeForAllDrop": {
+        "Name": "Permettre le lâcher libre pour toutes les lumières",
+        "Hint": "Laisser une lumière « Libre pour tous » être lâchée vers le sol. Aucun objet ne supporte ces sources, donc en lâcher une ne coûte rien et peut être répété sans limite. Désactiver cette option pour garder les lumières libres uniquement sur les jetons. Quand une source qui « Peut être lâchée » est désactivée elle n'est jamais lâchable, quoi qu'en dise ce réglage."
+      },
+      "RestrictPlayerControl": {
+        "Name": "Restreindre le contrôle de l'éclairage au MJ",
+        "Hint": "Seul le MJ peut activer, éteindre, lâcher ou ramasser une source lumineuse depuis l'HUD du jeton. Les joueurs voient toujours la palette et l'état allumé/éteint, mais leurs clics sur ces contrôles sont refusés. "
+      },
+      "AnnounceLit": {
+        "Name": "Annoncer les lumières dans le Chat",
+        "Hint": "Poster un message dans le Chat à chaque fois qu'une source lumineuse est allumée. Les autres événements de lumière (lâchée, ramassée, consumée) ne sont pas affectés."
+      }
+    },
+    "Config": {
+      "Title": "Sources lumineuses",
+      "DropHint": "Déposez ici un objet d'un type activé pour l'enregistrer comme source lumineuse.",
+      "AddByName": "Ajouter par nom",
+      "AddByNameTitle": "Ajoute une source lumineuse par son nom",
+      "NameLabel": "Nom",
+      "NamePlaceholder": "Nom de la source lumineuse",
+      "Empty": "Pas encore de sources lumineuses enregistrées.",
+      "OpenItem": "Ouvrir un objet",
+      "SendToChat": "Envoyer vers le Chat",
+      "NoItemReference": "Auncun objet lié trouvé. Re-deposez cette source lumineuse pour autoriser cette action.",
+      "Grant": "Libre pour tous (Pas d'objet nécessaire)",
+      "HudHidden": "Masquer dans le HUD du jeton — la source n'est allumée que via l'API du module, par l'élément qui se charge du coût de la dépense. Elle reste visible lorsqu'elle est allumée, ce qui permet de l'éteindre.",
+      "Edit": "Éditer le motif de lumière",
+      "Restore": "Restaurer les défauts du module",
+      "RestoreTooltip": "Annuler vos modifications et rétablir les valeurs enregistrées par le module de cette source. La mise à jour reprendra automatiquement.",
+      "RestoreDisabledTooltip": "Rien à restaurer — vous n'avez pas modifié cette source lumineuse depuis que son module l'a enregistrée.",
+      "RestoreTitle": "Restaurer les défauts du module",
+      "RestoreContent": "Annuler vos modifications de <strong>{name}</strong> et restaurer le motif lumineux, la consomption et la durée que son module a enregistrés ?",
+      "Delete": "Enlever la source lumineuse",
+      "DeleteTitle": "Enlever la source lumineuse",
+      "DeleteContent": "Enlever <strong>{name}</strong> des sources lumineuses enregistrées ?",
+      "InvalidType": "Le type de cet élément n'est pas activé en tant que source lumineuse. Activez-le d'abord dans la compatibilité système.",
+     "Duplicate": "{name} est déjà enregistré en tant que source lumineuse.",
+      "Unlimited": "Non-limité·e",
+      "Minutes": "{minutes} min",
+      "Patterns": "{count} motifs",
+      "ConsumeCopy": "Dépense un exemplaire",
+      "ConsumeCharge": "Dépense une charge",
+      "FreeForAll": "Libre pour tous",
+      "Coverable": "Peut être couvert·e",
+      "Undroppable": "Ne peut être lâché·e",
+      "ManagedByTooltip": "Enregistré par un système ou un module externe : {name}",
+      "NameOnlyBadge": "Aucun objet",
+      "NameOnlyTooltip": "Enregistré uniquement par le nom — pas d'objet lié.",
+      "RemovedHeading": "Enlever les sources lumineuses du module",
+      "RestoreRemovedTooltip": "Rendre cette source lumineuse à son propriétaire, avec les valeurs que son module a enregistrées."
+    },
+    "Patterns": {
+      "Standard": "Standard",
+      "New": "Nouveau motif",
+      "NamePlaceholder": "Nom de motif",
+      "Add": "Ajouter un motif",
+      "Remove": "Enlever un motif",
+      "Restore": "Restaurer ce motif aux défauts du module"
+    },
+    "Transfer": {
+      "Title": "Importer et exporter des sources lumineuses",
+      "ExportHeading": "Exporter",
+      "ExportHint": "Enregistre dans un fichier JSON les sources lumineuses de ce monde, vos modifications apportées aux sources fournies par des modules ainsi que les réglages de compatibilité du système. Les sources fournies par un module ne sont pas incluses : elles réapparaissent dans tout Monde où ce module est actif.",
+      "Export": "Exporter vers un fichier",
+      "ImportHeading": "Importer",
+      "ImportHint": "Charge un fichier exporté depuis un autre Monde. Les éléments du fichier remplacent ceux présents ici qui correspondent au même objet, tandis que les autres sont conservés. Les réglages de compatibilité ne sont appliqués que si le fichier provient du même système de jeu.",
+      "Import": "Importer depuis un fichier",
+      "NoFile": "Sélectionnez d'abord un fichier à importer.",
+      "NotAnExport": "Ce fichier n'est pas un export de Light Sources.",
+      "ConfirmTitle": "Importer des sources lumineuses",
+      "Added": "Ajouter {count}: {names}.",
+      "Replaced": "Remplacer {count}: {names}.",
+      "NoSources": "Ce fichier ne contient aucune source lumineuse.",
+      "Invalid": "Ignore {count} qui ne sont pas des sources lumineuses valides.",
+      "Unresolved":  "Ceci désigne un élément qui n'existe pas dans ce monde ; il ne correspondra donc qu'aux objets transportés portant le même nom et le même type : {names}.",
+      "CompatApplied": "Remplace les réglages de compatibilité système avec ceux du fichier.",
+      "CompatOtherSystem": "Conserve les réglages de compatibilité système de ce monde : le fichier provient d'un autre système de jeu.",
+      "ConfirmQuestion": "Importer ?",
+      "Done": "Sources lumineuses importées."
+    },
+    "Compat": {
+      "Title": "Compatibilité avec le système",
+      "SystemNote": "Système détecté : {system} ({id}). Activer les types que ce module devrait traiter comme sources lumineuses ainsi que les acteurs qui pourraient les porter.",
+      "Tabs": {
+        "items": "Types d'objet",
+        "actors": "Types d'acteur",
+        "quantity": "Quantité & charges"
+      },
+      "ItemsHint": "Activez les types d'item qui peuvent être autorisées comme sources lumineuses.",
+      "ActorsHint": "Activez les types d'acteurs autorisés à utiliser les sources lumineuses « Libres pour tous » sur le HUD de jeton. Les acteurs portant un objet source lumineuse correspondant peuvent toujours l'utiliser, quoi qu'il soit indiqué dans cette liste.",
+      "NoItemTypes": "Le système actif ne définit aucun type d'objet.",
+      "NoActorTypes": "Le sytème actif ne définit aucun type d'acteur.",
+      "QuantityPath": "Chemin de la quantité de l'objet",
+      "QuantityHint": "Chemin pointé vers la quantité d'un objet, depuis la racine de l'objet (par exemple : system.quantity). Lu par les sources qui dépensent un exemplaire, afin de vérifier la disponibilité et de soutraire quand on les allume. Laisser vide si l'objet du système n'a pas de quantité — de telles sources ne seront jamais comptées comme réduites.",
+      "ChargesPath": "Chemin des charges de l'objet",
+      "ChargesHint": "Chemin pointé vers le nombre de charges qu'il reste à un objet, depuis la racine de l'objet (par exemple : system.uses.value). Lu par les sources qui dépensent une charge, afin de vérifier la disponibilité et, du moment qu'un chemin de dépense n'est pas renseigné ci-dessous, pour en soustraire une quand elle est allumée. Laisser vide si l'objet du système n'a pas de charges.",
+      "ChargesSpentPath": "Chemin des charges dépensées de l'objet",
+      "ChargesSpentHint": "Optionnel. Pour un système qui stocke les charges utilisées plutôt que celles qui restent (par exemple : system.uses.spent). Quand il est renseigné, l'allumage ajoute un ici au lieu de soustraire depuis le chemin des charges, qui est toujours ce qui est lu.",
+      "Save": "Sauvegarder"
+    },
+    "LightEditor": {
+      "Title": "Motif de l'éclairage : {name}",
+      "Tabs": {
+        "patterns": "Motifs",
+        "usage": "Consomption"
+      },
+      "Fields": {
+        "PatternsHint": "Chaque motif correspond à une manière d'émettre cette lumière — par exemple, un faisceau large à courte portée opposé à un faisceau étroit à longue portée. L'acteur sélectionne un motif depuis le HUD du jeton. La consomption et la durée sont communes à tous les motifs.",
+        "PreviewHint": "Sélectionnez un jeton sur le canevas pour prévisualiser ces réglages en temps réel pendant que vous les modifiez. L'éclairage du jeton est rétabli automatiquement lorsque vous fermez cette fenêtre.",
+        "Dim": "Rayon de lumière (tamisé)",
+        "Bright": "Rayon de lumière (lumineux)",
+        "Angle": "Angle d'émission",
+        "Color": "Couleur de la lumière",
+        "Alpha": "Intensité de la couleur",
+        "Negative": "Source d'obscurité",
+        "NegativeHint": "Projette de l'obscurité au lieu de la lumière, assombrissant la zone située dans son rayon d'action plutôt que de la révéler. L'obscurité disposant de ses propres animations, l'activation de cette option annule le type d'animation sélectionné ci-dessous.",
+        "AnimationType": "Type d'animation",
+        "AnimationNone": "Aucun·e",
+        "Speed": "Vitesse d'animation",
+        "Intensity": "Intensité d'animation",
+        "Reverse": "Direction inverse",
+        "Advanced": "Avancé",
+        "AdvancedEnabled": "Utiliser les options avancées",
+        "AdvancedEnabledHint": "« Désactivé » : le jeton conserve ses propres options d'éclairage avancées, et une lumière déposée utilise les paramètres par défaut de Foundry. « Activé » : ce modèle définit ces options, que l'objet soit en main ou au sol. Non disponible pour une source d'obscurité.",
+        "Ending": "Niveau faible",
+        "EndingEnabled": "Utiliser un aspect « Niveau faible »",
+        "EndingEnabledHint": "« Désactivé » : ce motif conserve l'apparence ci-dessus jusqu'à ce qu'il s'éteigne. « Activé » : durant les dernières minutes — selon le paramètre « Niveau faible » de l'onglet Consomption — l'éclairage adopte cette apparence à la place, qu'il soit sur un jeton ou au sol, couvert ou non.",
+        "Consume": "Dépense de lumière",
+        "ConsumeModes": {
+          "none": "Rien",
+          "copy": "Un exemplaire de l'objet",
+          "charge": "Une charge de l'objet"
+        },
+        "ConsumeHint": "Indique comment cette source consomme l'objet pour produire de l'éclairage. « Rien » : l'objet lui-même est la source lumineuse (ex. : une lanterne ou une lame luisante). « Un exemplaire » : l'objet fait partie d'une pile d'éléments identiques (ex. : cinq torches) ; un exemplaire se transforme en flamme et quitte la pile. « Une charge » : l'objet possède un nombre d'utilisations limité (ex. : une torche allumable trois fois ou une baguette magique à charges) ; la lumière émane de l'objet, s'éteint si l'objet quitte l'acteur et se déplace avec lui si un autre module transporte l'objet sur la carte. Si une charge est éteinte avant d'être totalement consumée, la durée restante est conservée sur l'objet ; lors du prochain allumage, cette durée est consommée en priorité sans dépenser de nouvelle charge. Seul l'acte d'allumer consomme la charge ; changer de motif, lâcher l'objet ou le ramasser ne le font pas.",
+        "Coverable": "Peut être couverte",
+        "CoverableHint": "Ajoute une commande « Couvrir » à côté de « Éteindre » dans le HUD du jeton ; cela masque/couvre la lumière au lieu de l'arrêter : elle cesse d'éclairer mais continue de se consumer, et peut être découverte plus tard en utilisant le temps restant. Conçu pour une lumière issue d'un sortilège lancé sur un objet plutôt que pour une flamme nue — un tour de magie *Lumière* sur un galet est rangé dans une poche, pas soufflé. Désactivez cette option pour les torches et les lanternes.",
+        "Droppable": "Peut être lâchée",
+        "DroppableHint": "Permet de déposer la source lumineuse depuis le HUD du jeton tant qu'elle est active, la plaçant au sol sous forme de lumière ambiante. Désactivez cette option pour une lumière intégrée à l'équipement du personnage (comme une armure luminescente ou une lampe fixée à un casque) : elle reste attachée au jeton et ne disparaît qu'avec l'objet lui-même si un autre module déplace cet objet. Pour les lumières de type « Libre pour tous », le paramètre « Permettre le lâcher libre pour toutes les lumières » doit également être activé.",
+        "Duration": "Durée (minutes)",
+        "DurationHint": "Minutes avant que l'éclairage ne s'éteigne de lui-même (selon le mode choisi ci-dessous). Utilisez 0 pour un éclairage continu qui ne s'éteint que manuellement.",
+        "DurationPreset": "Durée préréglée",
+        "EndingMinutes": "Niveau faible (minutes)",
+        "EndingMinutesHint": "Indique, pour les dernières minutes avant que l'éclairage ne s'éteigne, combien de temps chaque motif affiche son mode « Niveau faible ». Utilisez 0 pour désactiver cette fonction. Une valeur égale ou supérieure à la durée totale entraîne l'affichage du mode « Niveau faible » dès l'allumage de l'éclairage.",        "DurationMode": "Durée décomptée en",
+        "DurationModeWorld": "Temps de jeu (Horloge du Monde)",
+        "DurationModeReal": "Temps réél (Horloge murale)",
+        "DurationModeHint": "« Temps de jeu » : l'éclairage diminue à mesure que le MJ fait avancer l'horloge du monde et reste allumé tant que l'horloge est à l'arrêt. « Temps réel » : l'éclairage diminue en minutes réelles, même lorsque le jeu est en pause ou que son propriétaire est hors ligne.",        "RangePreset": "Portée préréglée",
+        "RangeCustom": "Personnalisé"
+      },
+      "Save": "Sauvegarder"
+    },
+    "Hud": {
+      "Tooltip": "Sources lumineuses",
+      "TooltipLit": "{item} — allumé·e",
+      "TooltipRemaining": "{item} — reste : {minutes} min",
+      "TooltipStowed": "{item} — couvert·e",
+      "TooltipStowedRemaining": "{item} — couvert·e, reste : {minutes} min",
+      "Extinguish": "Éteindre l'éclairage",
+      "Drop": "Lâcher",
+      "DropTooltip": "Lâcher cet éclairage vers le sol pour en faire une lumière ambiante",
+      "Stow": "Couvrir",
+      "StowTooltip": "Couvrir cette lumière sans l'éteindre — elle continue à se consumer hors de vue",
+      "Uncover": "Découvrir",
+      "UncoverTooltip": "Découvrir cette lumière afin qu'elle brille à nouveau",
+      "Pickup": "Ramasser l'éclairage",
+      "PickupTooltip": "Prendre cet éclairage depuis le sol et le porter de nouveau",
+      "PickupSourceGone": "L'objet :  {item} a été ramassé, mais sa source lumineuse n'est plus configurée, elle ne peut donc plus être allumée.",
+      "PickupBurnedOut": "L'objet : {item} a déjà été consumé avant qu'il ne soit ramassé.",
+      "NoGm": "Aucun MJ n'est connecté pour placer la lumière. Demandez à un MJ de s'identifer et réessayez.",
+      "NoItem": "{name} ne porte plus : {item}.",
+      "OnGround": "L'éclairage : {item} repose sur le sol. Le ramasser plutôt que de le rallumer.",
+      "Refused": "{item} ne peut être allumé·e sur {name}: Le système de jeu ou un autre module a refusé l'effet de lumière.",
+      "GmOnly": "Seul le MJ peut contrôler les sources lumineuses."
+    },
+    "Interactive": {
+      "Legend": "Sources lumineuses",
+      "Label": "Les joueurs peuvent éteindre/allumer",
+      "Hint": "Afficher un contrôle sur la carte qui laisse les joueurs allumer et éteindre cette lumière. Ils doivent déplacer un jeton en direction de la lumière, ou être près d'elle, pour atteindre le contrôle.",
+      "OutOfReach": "Vous devez vous approcher encore plus pour atteindre cette lumière."
+    },
+    "Chat": {
+      "ExpiredTitle": "L'éclairage est consumé",
+      "Expired": "L'objet {item} porté par {actor} est entièrement consumé.",
+      "LitTitle": "Éclairage allumé",
+      "Lit": "{actor} allume : {item}.",
+      "LitPattern": "{actor} allume : {item} ({pattern}).",
+      "DroppedTitle": "Éclairage lâché",
+      "Dropped": "{actor} lâche : {item} vers le sol.",
+      "PickedUpTitle": "Éclairage ramassé",
+      "PickedUp": "{actor} ramasse : {item} depuis le sol.",
+      "GroundExpiredTitle": "L'éclairage est consumé",
+      "GroundExpired": "L'objet {item} laissé sur le sol est entièrement consumé.",
+      "DragHint": "À déposer sur une fiche d'acteur pour l'ajouter à son inventaire."
+    },
+    "Effect": {
+      "ExpiryEvent": "La source lumineuse est entièrement consumée"
+    }
+  }
+}
