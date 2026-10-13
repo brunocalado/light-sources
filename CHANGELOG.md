@@ -1,3 +1,10 @@
+# 0.8.2
+
+### Added
+
+* **French translation** (#20, thanks @Mystery-Man-From-Ouperspace).
+
+
 # 0.8.1
 
 ### Fixed
