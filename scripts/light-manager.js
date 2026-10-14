@@ -551,7 +551,12 @@ export async function dropLight(actor, source, pattern, token) {
   const placed = await moveLightToGround(actor, canvas.scene?.id, {
     ...buildGroundLightData(actor, source, pattern, active),
     x,
-    y
+    y,
+    // A torch lies on the floor its bearer stands on. Left empty, `levels` means every level,
+    // so the light would shine on each floor of the building. Core reads the elevation too:
+    // it picks the light's level from it and skips points further above or below than its radius.
+    elevation: token.document.elevation,
+    levels: [token.document.level]
   });
   // Nothing reached the ground (no scene, or no GM to place it): stay silent rather
   // than announce a light that does not exist. `placeAmbientLight` reports the cause,
