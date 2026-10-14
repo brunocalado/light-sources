@@ -82,8 +82,8 @@ class LightControl extends PIXI.Container {
 
   /**
    * Whether this control is visible from the current user's perspective, following
-   * core's door rule: anything goes when the scene has no token vision, otherwise the
-   * light's position must be visible.
+   * core's door rule: the light must be on the level being viewed, and then anything goes
+   * when the scene has no token vision, otherwise the light's position must be visible.
    *
    * This is what keeps a light that is switched off from being a free beacon in the
    * dark — an unlit torch across an unexplored room is not visible, so its control is
@@ -92,6 +92,10 @@ class LightControl extends PIXI.Container {
    */
   get isVisible() {
     if ( !isInteractive(this.light) ) return false;
+    // Core draws placeables only for the viewed level, so a door on another floor never gets
+    // a control at all. Ours are built per scene, so the level is tested here; this also hides
+    // a control at once when the GM moves its light to another level.
+    if ( !this.light.viewed ) return false;
     if ( !canvas.visibility.tokenVision ) return true;
     return canvas.visibility.testVisibility(this.center, { object: this, tolerance: 0 });
   }

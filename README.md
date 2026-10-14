@@ -94,7 +94,7 @@ A source made from an item in a world's Items directory points to an item that t
 
 Any light already placed on your scene can be made interactive. Open it on the **Lighting** layer to bring up Foundry's own light configuration, and tick **Players Can Switch** at the bottom of the **Basic** tab.
 
-From then on a small control appears over that light for everyone who can see it. A player has to walk a token onto the light — or onto a square beside it — before the control responds, so putting out the torch at the end of the hall means walking down the hall. This is what makes it a stealth decision rather than a free action.
+From then on a small control appears over that light for everyone who can see it. On a scene with several levels, it shows only while one of the light's own levels is being viewed. A player has to walk a token onto the light — or onto a square beside it — before the control responds, so putting out the torch at the end of the hall means walking down the hall. This is what makes it a stealth decision rather than a free action.
 
 A light that is switched off uses Foundry's native **hidden** state, so you'll see it dashed on the Lighting layer while it's out, and you can always flip it back yourself. Lights the players drop on the ground get this treatment automatically — those are theirs, and need no tick from you.
 
