@@ -12,8 +12,8 @@ import { toggleAmbientLight } from "./light-manager.js";
 
 /**
  * The container holding one control icon per interactive light on the current scene,
- * parented to the controls layer alongside core's own door controls. Rebuilt from
- * scratch on every canvas draw (see `onCanvasReady`).
+ * parented to the controls layer alongside core's own door controls. Built on every
+ * canvas draw (`onCanvasReady`) and destroyed on every teardown (`onCanvasTearDown`).
  * @type {PIXI.Container|null}
  */
 let layer = null;
@@ -252,6 +252,7 @@ class LightControl extends PIXI.Container {
  */
 export function registerInteractiveLightHooks() {
   Hooks.on("canvasReady", onCanvasReady);
+  Hooks.on("canvasTearDown", onCanvasTearDown);
   Hooks.on("createAmbientLight", onCreateAmbientLight);
   Hooks.on("updateAmbientLight", onUpdateAmbientLight);
   Hooks.on("deleteAmbientLight", onDeleteAmbientLight);
@@ -273,22 +274,32 @@ export function registerInteractiveLightHooks() {
 /* -------------------------------------------- */
 
 /**
- * Build the control layer and its icons for the scene that was just drawn.
- *
- * Rebuilt wholesale rather than reused: `ControlsLayer#_tearDown` only clears the
- * children it created itself, so a container of ours left behind would survive a
- * scene change holding icons for lights that are no longer there.
+ * Build the control layer and its icons for the scene that was just drawn. The layer
+ * of the previous draw is already gone by now, taken down in `onCanvasTearDown`.
  * @returns {Promise<void>}
  */
 async function onCanvasReady() {
-  controls.clear();
-  layer = null;
   if ( !canvas.controls ) return;
 
   layer = canvas.controls.addChild(new PIXI.Container());
   layer.eventMode = "passive";
   syncLayerVisibility();
   for ( const light of (canvas.scene?.lights ?? []) ) await addControl(light);
+}
+
+/* -------------------------------------------- */
+
+/**
+ * Take our control layer down with the scene. `ControlsLayer#_tearDown` clears only the
+ * children core created (its door controls), so a container of ours survives every redraw —
+ * a level change included — still showing the old scene's icons, which no hook updates anymore.
+ * `canvasTearDown` fires before the layers tear down, so `canvas.controls` is still intact here.
+ * @returns {void}
+ */
+function onCanvasTearDown() {
+  for ( const id of [...controls.keys()] ) removeControl(id);
+  layer?.destroy({ children: true });
+  layer = null;
 }
 
 /* -------------------------------------------- */
