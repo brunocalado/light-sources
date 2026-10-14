@@ -1,3 +1,13 @@
+# 0.8.3
+
+### Fixed
+
+* **Dropped lights land on the token's level** (#21, thanks @bdavis19). A light dropped from the Token HUD is placed on the level and at the elevation of the token that dropped it, instead of on every level of the scene.
+* **A light's on/off control shows only on its own level** (#21). On a scene with several levels, the players' control over an interactive light appears only while one of that light's levels is being viewed.
+* **Pickup and switching stay within the token's level.** A token can only pick up or switch a light on its own level, not one on the floor above or below at the same spot.
+* **Map controls no longer pile up.** Changing scene or level left the previous on/off controls on the map, one more set per change, and the stale ones never updated or went away.
+
+
 # 0.8.2
 
 ### Added
