@@ -94,7 +94,7 @@ A source made from an item in a world's Items directory points to an item that t
 
 Any light already placed on your scene can be made interactive. Open it on the **Lighting** layer to bring up Foundry's own light configuration, and tick **Players Can Switch** at the bottom of the **Basic** tab.
 
-From then on a small control appears over that light for everyone who can see it. On a scene with several levels, it shows only while one of the light's own levels is being viewed. A player has to walk a token onto the light — or onto a square beside it — before the control responds, so putting out the torch at the end of the hall means walking down the hall. This is what makes it a stealth decision rather than a free action.
+From then on a small control appears over that light for everyone who can see it. On a scene with several levels, it shows only while one of the light's own levels is being viewed. A player has to walk a token onto the light — or onto a square beside it, on the light's level — before the control responds, so putting out the torch at the end of the hall means walking down the hall. This is what makes it a stealth decision rather than a free action.
 
 A light that is switched off uses Foundry's native **hidden** state, so you'll see it dashed on the Lighting layer while it's out, and you can always flip it back yourself. Lights the players drop on the ground get this treatment automatically — those are theirs, and need no tick from you.
 
@@ -117,7 +117,7 @@ If the source spends a charge each time it's lit — a lantern and its oil, say 
 
 ![Dropping a light source on the ground](docs/drop-light.gif)
 
-**Pick a light back up**: walk back to a torch you left on the floor and select your token. If it's standing on the light — or on any of the squares around it — **Pick Up Light** appears at the top of the flame menu. Click it and the flame comes back to your token with the time it has left on it. Like dropping, this costs nothing: you're picking up the torch you put down, not spending a new one.
+**Pick a light back up**: walk back to a torch you left on the floor and select your token. If it's standing on the light — or on any of the squares around it — and on the same level (floor) as the light, **Pick Up Light** appears at the top of the flame menu. Click it and the flame comes back to your token with the time it has left on it. Like dropping, this costs nothing: you're picking up the torch you put down, not spending a new one.
 
 ![Picking a dropped light back up off the ground](docs/player-pickup-light.gif)
 

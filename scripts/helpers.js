@@ -482,14 +482,17 @@ export function isManagedElsewhere(light) {
 }
 
 /**
- * Find a light lying on the ground within reach of a token. A light another package
- * manages is left out: that package hands it back along with its own document.
+ * Find a light lying on the ground within reach of a token, on the token's own level.
+ * A light another package manages is left out: that package hands it back along with its own document.
  * @param {foundry.canvas.placeables.Token} token The token reaching for a light.
  * @returns {AmbientLightDocument|null} The dropped light in reach, or null.
  */
 export function findGroundLight(token) {
   for ( const light of (canvas.scene?.lights ?? []) ) {
     if ( !light.getFlag(MODULE_ID, FLAGS.GROUND_LIGHT) || isManagedElsewhere(light) ) continue;
+    // Reach is measured on the map's x/y alone, so a torch one floor up at the same spot
+    // would otherwise be in reach.
+    if ( !light.includedInLevel(token.document.level) ) continue;
     if ( isWithinReach(token, { x: light.x, y: light.y }) ) return light;
   }
   return null;

@@ -104,14 +104,17 @@ class LightControl extends PIXI.Container {
 
   /**
    * Whether the user can actually work this light right now: a controlled token has
-   * to be standing on it or beside it. GMs are exempt — they are not playing a
+   * to be standing on it or beside it, on one of the light's levels. GMs are exempt — they are not playing a
    * character, and can already switch any light from the lighting layer.
    * @type {boolean}
    */
   get isReachable() {
     if ( game.user.isGM ) return true;
     const point = this.center;
-    return (canvas.tokens?.controlled ?? []).some(token => isWithinReach(token, point));
+    // Reach is measured on the map's x/y alone, so the level is tested beside it: a token
+    // standing under a torch on the floor above is not touching it.
+    return (canvas.tokens?.controlled ?? []).some(token =>
+      this.light.includedInLevel(token.document.level) && isWithinReach(token, point));
   }
 
   /* -------------------------------------------- */
@@ -415,14 +418,14 @@ function onDeleteAmbientLight(light) {
 /* -------------------------------------------- */
 
 /**
- * Re-evaluate reach after a token moves. Only movement matters here — every other
- * token change leaves the distances alone.
+ * Re-evaluate reach after a token moves — across the map, or to another level, as a
+ * token taking the stairs does. Every other token change leaves reach alone.
  * @param {TokenDocument} token The updated token.
  * @param {object} changed The differential update data.
  * @returns {void}
  */
 function onUpdateToken(token, changed) {
-  if ( ("x" in changed) || ("y" in changed) ) refreshControls();
+  if ( ("x" in changed) || ("y" in changed) || ("level" in changed) ) refreshControls();
 }
 
 /* -------------------------------------------- */
