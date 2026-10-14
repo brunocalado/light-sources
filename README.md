@@ -76,6 +76,18 @@ There are also a few world settings under **Game Settings → Configure Settings
 
 Tip: select a token on the canvas while you edit — you'll watch the light change on the map in real time.
 
+### For the GM — give a light to only one character
+
+A light source shows in a character's Token HUD when it is marked **Free for All**, or when the character carries an item with the same name as the source. Your game system doesn't need to know anything about light sources for this to work: a plain item called "Lantern" is enough.
+
+To make the Lantern belong to one character:
+
+1. In **Configure Light Sources**, turn **Free for All** off on the Lantern.
+2. Create an item named exactly "Lantern" and give it to that character. Any item type works, unless the source is tied to a specific item type. Then the item has to be of that type too.
+3. If the item isn't meant to be used up, open the source with the pencil and set **Lighting Spends** to **Nothing**.
+
+Now only that character sees the Lantern in the flame menu. To hand it to someone else, move the item to their sheet. Sources everyone should always have, such as torches, can stay on **Free for All**.
+
 ### For the GM — copy your setup to another world
 
 Open **Import or Export Light Sources** in the module settings. **Export to File** saves a JSON file holding:
