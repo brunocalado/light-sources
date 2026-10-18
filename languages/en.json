@@ -123,6 +123,8 @@
         "usage": "Consumption"
       },
       "Fields": {
+        "SourceName": "Item Name",
+        "SourceNameHint": "The exact name an item must have in a character's inventory to count as this light. Renaming changes which items match.",
         "PatternsHint": "Each pattern is a way this light can be lit — for example a wide, short-range beam versus a narrow, long-range one. The actor picks a pattern from the Token HUD. Consumption and duration are shared across every pattern.",
         "PreviewHint": "Select a token on the canvas to preview these settings on it live as you edit. The token's light is restored automatically when you close this window.",
         "Dim": "Dim Radius",

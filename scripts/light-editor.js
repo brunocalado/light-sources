@@ -398,6 +398,9 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
     const patterns = this.#draftPatterns ?? source.patterns;
     const registered = getRegisteredSource(this.options.sourceId);
     context.source = source;
+    // Only a name-only source the GM made can be renamed: an Item-backed source takes its
+    // name from the Item, and a registered one from the module that registers it.
+    context.renamable = !!source.id && !source.uuid && !registered;
     context.tabs = this._prepareTabs("primary");
     // The advanced inputs are rendered from core's own token light fields, so their
     // labels, hints and bounds are core's. Taken from TokenDocument rather than a bare
@@ -564,11 +567,21 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
     const data = foundry.utils.expandObject(formData.object);
     const patterns = this.#patternsFromData(data);
     const registered = getRegisteredSource(this.options.sourceId);
+    // For a name-only source the name is its only match rule, so renaming it changes which
+    // items count as this light.
+    const current = this.source;
+    const name = (current && !current.uuid && !registered) ? String(data.sourceName ?? "").trim() : "";
+    if ( name && getSources().some(s => (s.id !== current.id) && (s.name === name)) ) {
+      // Thrown, not warned: ApplicationV2#_onSubmitForm catches it, notifies, and skips
+      // closeOnSubmit, so the GM keeps every other edit in the open form.
+      throw new Error(game.i18n.format("LIGHTSOURCES.Config.Duplicate", { name }));
+    }
 
     // Saving a source a module registers stores the GM's own copy, which replaces the
     // registered values until it is restored (see `_onRestoreDefault` in
     // light-sources-config.js).
     await editSource(this.options.sourceId, source => {
+      if ( name ) source.name = name;
       source.consume = Object.values(CONSUME_MODES).includes(data.consume) ? data.consume : CONSUME_MODES.NONE;
       source.coverable = !!data.coverable;
       source.droppable = !!data.droppable;

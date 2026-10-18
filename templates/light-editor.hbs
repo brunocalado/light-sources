@@ -1,4 +1,14 @@
 <div class="ls-light-editor-main">
+{{#if renamable}}
+{{!-- Named sourceName, not name, so it never mixes with patterns.<i>.name. --}}
+<div class="form-group ls-source-name">
+  <label>{{localize "LIGHTSOURCES.LightEditor.Fields.SourceName"}}</label>
+  <div class="form-fields">
+    <input type="text" name="sourceName" value="{{source.name}}" required>
+  </div>
+  <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.SourceNameHint"}}</p>
+</div>
+{{/if}}
 <nav class="sheet-tabs tabs" data-group="primary">
   {{#each tabs}}
   <a class="{{this.cssClass}}" data-action="tab" data-group="{{this.group}}" data-tab="{{this.id}}">
