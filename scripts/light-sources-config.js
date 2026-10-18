@@ -16,6 +16,20 @@ import { LightSourceEditor } from "./light-editor.js";
 const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
 
 /**
+ * Whether a dropped Item may take over a source with its name: only the GM's own
+ * live record (a module's registration would overwrite the Item metadata again)
+ * whose Item does not resolve here, or which never had one.
+ * @param {object} source The clashing source.
+ * @returns {object|null} The source, or null when it must not be relinked.
+ */
+function relinkable(source) {
+  const own = getGmSources().find(r => r.id === source.id);
+  if ( !own || own.removed || getRegisteredSource(source.id) ) return null;
+  if ( source.uuid && foundry.utils.fromUuidSync(source.uuid, { strict: false }) ) return null;
+  return source;
+}
+
+/**
  * GM configuration application listing the registered light sources.
  * Items of an enabled type (see the compatibility settings) are registered by
  * dragging them onto the window; each entry can then be edited (light pattern,
@@ -120,7 +134,7 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
   /**
    * Handle an Item dropped onto the window: validate its type against the
    * enabled item types and register it as a new light source with the default
-   * light pattern.
+   * light pattern, or relink the GM's source of the same name whose Item is gone.
    * @param {DragEvent} event The drop event.
    * @returns {Promise<void>}
    */
@@ -142,7 +156,25 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
     // removed is still a record under that id, so it is refused as well: restoring it
     // is the way back.
     const taken = [...getSources(), ...getRemovedSources()];
-    if ( taken.some(s => (s.uuid === item.uuid) || ((s.name === item.name) && (!s.type || (s.type === item.type)))) ) {
+    if ( taken.some(s => s.uuid === item.uuid) ) {
+      ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Config.Duplicate", { name: item.name }));
+      return;
+    }
+    const clash = taken.filter(s => (s.name === item.name) && (!s.type || (s.type === item.type)));
+    // The one exception: a single clash that is the GM's own source and has lost its
+    // Item (deleted, imported from another world, pack disabled) takes this Item
+    // instead, since that is the only way to repair it without losing its settings.
+    const stale = (clash.length === 1) ? relinkable(clash[0]) : null;
+    if ( stale ) {
+      // The id stays: lit effects and ground lights find their source by it.
+      await editSource(stale.id, record => Object.assign(record, {
+        uuid: item.uuid, name: item.name, img: item.img, type: item.type
+      }));
+      ui.notifications.info(game.i18n.format("LIGHTSOURCES.Config.Relinked", { name: item.name }));
+      this.render();
+      return;
+    }
+    if ( clash.length ) {
       ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Config.Duplicate", { name: item.name }));
       return;
     }

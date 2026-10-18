@@ -104,7 +104,7 @@ Sources a module provides are not in the file as such: they come back in any wor
 
 In the other world, choose the file and click **Import from File**. You see what will change before anything is written. A source in the file replaces the one with the same item, and the sources already there are kept. The compatibility settings are applied only when both worlds use the same game system.
 
-A source made from an item in a world's Items directory points to an item that the other world doesn't have. It is imported anyway, and the import lists it: it still works for any carried item with the same name and type, but **Open Item** and **Send to Chat** can't find it. For a setup that moves cleanly between worlds, drag your light items from a compendium.
+A source made from an item in a world's Items directory points to an item that the other world doesn't have. It is imported anyway, and the import lists it: it still works for any carried item with the same name and type, but **Open Item** and **Send to Chat** can't find it. To link it again, drag the matching item into **Configure Light Sources**; the source keeps its patterns and settings. For a setup that moves cleanly between worlds, drag your light items from a compendium.
 
 ### For the GM — hand a light over to the players
 
