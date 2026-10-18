@@ -199,7 +199,23 @@ export function getSources() {
   for ( const own of gm.values() ) {
     if ( !own.removed ) sources.push(own);
   }
-  return sources;
+  return sources.map(withItemLabel);
+}
+
+/**
+ * The source with its linked Item's current name and icon. The name is the match rule
+ * for copies of a world Item, which carry no compendium source, so the copy stored at
+ * drop time goes stale the moment the Item is renamed. Falls back to the stored values
+ * when the Item cannot be resolved here: deleted, or in a pack that is not available.
+ * `strict: false` turns an embedded compendium uuid into null instead of a throw.
+ * @param {object} source A light source.
+ * @returns {object} The source, with `name` and `img` taken from its Item when it resolves.
+ */
+function withItemLabel(source) {
+  if ( !source.uuid ) return source;
+  const item = foundry.utils.fromUuidSync(source.uuid, { strict: false });
+  if ( !item?.name ) return source;
+  return { ...source, name: item.name, img: item.img || source.img };
 }
 
 /**
