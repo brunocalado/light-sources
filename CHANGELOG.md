@@ -1,3 +1,16 @@
+# 0.9.0
+
+### Added
+
+* **Rename a light source added by name** (#22, thanks @MapperD). Its editor now has an **Item Name** field, so a typo no longer means removing the source and setting it up again. The name is the one an item must have in a character's inventory, so changing it changes which items count as this light.
+* **Duplicate a light source** (#22). A new button on each entry of **Configure Light Sources** copies the source, with its patterns, consumption and duration, as a starting point for a new one. The copy is always a source added by name, called "Lantern (Copy)" for a source named Lantern, and its editor opens right away so you can rename it.
+
+### Fixed
+
+* **A source made from an item follows that item's name and icon.** The name was copied once, when the item was dragged in. Renaming the item afterwards left the old name on the source, and copies of a world item stopped matching it, so the light disappeared from the Token HUD. Fix the item's name and the source now follows.
+* **Dragging in an item with the same name as a source added by name is refused.** The two sources would otherwise claim the same items.
+
+
 # 0.8.3
 
 ### Fixed
