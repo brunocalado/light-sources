@@ -1,3 +1,16 @@
+# 0.10.0
+
+### Added
+
+* **Lanterns that burn fuel from another item** (#23, thanks @MapperD). In the light editor, set **Lighting Spends** to **Fuel from another item** and drag the fuel, such as a stack of oil flasks, onto the new **Fuel** field. The lantern is the light and is never spent: each lighting spends one copy of the fuel, counted through the quantity path. With no fuel carried, the lantern doesn't show in the flame menu. A lantern put out early keeps its time and burns that first, without spending more fuel.
+* **Relink a light source to its item** (#23). When the item behind a source is gone (deleted and made again, imported from another world, or left in a disabled compendium), drag the item with the same name into **Configure Light Sources**. The source links to it and keeps its patterns and settings, and lights already burning from it keep working. A source added by name, or a duplicate renamed to an item's name, becomes linked the same way.
+* **The import lists lanterns whose fuel item is missing**, apart from sources whose own item is missing, since the fuel is linked again in the light editor.
+
+### Changed
+
+* `registerSources` refuses `consume: "fuel"`: only the GM sets fuel, in the light editor. The GM can still set a registered source to fuel, so `activate` can return `false` when no fuel is carried.
+
+
 # 0.9.0
 
 ### Added
