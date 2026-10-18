@@ -220,4 +220,33 @@
     flex: none;
     margin-bottom: 0.25rem;
   }
+
+  /* The fuel row only means something for a fuel source; the selector follows the
+   * Consume select live, with no listener and no re-render. */
+  .ls-fuel {
+    display: none;
+  }
+
+  &:has(select[name="consume"] option[value="fuel"]:checked) .ls-fuel {
+    display: flex;
+  }
+
+  .ls-fuel-drop {
+    min-height: 2.25rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px dashed var(--color-border, #7a7971);
+    border-radius: 4px;
+
+    img {
+      flex: none;
+      width: 1.75rem;
+      height: 1.75rem;
+      border: none;
+    }
+  }
+
+  .ls-fuel-empty {
+    opacity: 0.7;
+    font-style: italic;
+  }
 }

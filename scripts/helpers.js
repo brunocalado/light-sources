@@ -91,6 +91,12 @@ export function sourceField() {
     type: new f.StringField({ required: true, nullable: true, blank: false, initial: null }),
     managedBy: new f.StringField({ required: true, nullable: true, blank: false, initial: null }),
     consume: new f.StringField({ required: true, choices: Object.values(CONSUME_MODES), initial: CONSUME_MODES.NONE }),
+    // The Item a "fuel" source spends instead of its own; matched like a source.
+    fuel: new f.SchemaField({
+      uuid: new f.StringField({ required: true, blank: false }),
+      name: new f.StringField({ required: true, blank: false }),
+      type: new f.StringField({ required: true, blank: false })
+    }, { required: true, nullable: true, initial: null }),
     freeForAll: new f.BooleanField(),
     coverable: new f.BooleanField(),
     droppable: new f.BooleanField({ initial: true }),
@@ -356,7 +362,7 @@ export function getChargesSpentPath() {
 }
 
 /**
- * The burn time an Item kept from a charge put out before it burned down (see
+ * The burn time an Item kept from a charge or fuel put out before it burned down (see
  * `FLAGS.BURN_LEFT`).
  * @param {Item} item The item to read.
  * @returns {number} Whole seconds left, or 0 when nothing is kept.
@@ -419,7 +425,8 @@ export function listDocumentTypes(documentName) {
  * matches at any count — which is what lets a reusable tool (a lantern, a glowing
  * blade) work in a system where the configured path is optional per item and rests at 0.
  * Items whose count cannot be determined (no path configured) are always treated as
- * available.
+ * available. A source that burns fuel matches its light Item at any count, but only while
+ * that Item kept burn time or the fuel is carried (see `findFuel`).
  * @param {Actor} actor The actor whose inventory is searched.
  * @param {object} source A light source definition ({name, type, uuid, ...}).
  *   `type` and `uuid` may be null/absent for a source registered by name only.
@@ -429,10 +436,13 @@ export function listDocumentTypes(documentName) {
  * @returns {Item[]} The matching embedded Items available to this source.
  */
 export function findMatchingItems(actor, source, { anyCount = false } = {}) {
+  const hasFuel = !anyCount && (source.consume === CONSUME_MODES.FUEL) && (findFuel(actor, source).length > 0);
   const available = item => {
     // "Empty" and "not a light source" are different questions: only the item that
     // will actually be spent is gated on what it has left.
     if ( anyCount || (source.consume === CONSUME_MODES.NONE) ) return true;
+    // A lantern is there to light while it kept burn time or its fuel is carried.
+    if ( source.consume === CONSUME_MODES.FUEL ) return (getBurnLeft(item) > 0) || hasFuel;
     // A charge put out half burned is still there to burn, even after the last one was spent.
     if ( (source.consume === CONSUME_MODES.CHARGE) && (getBurnLeft(item) > 0) ) return true;
     const remaining = getItemRemaining(item, source.consume);
@@ -449,6 +459,21 @@ export function findMatchingItems(actor, source, { anyCount = false } = {}) {
     if ( source.type && (i.type !== source.type) ) return false;
     return available(i);
   });
+}
+
+/**
+ * The carried copies of the Item a `"fuel"` source spends, matched like a source and
+ * gated like a `"copy"` one: a stack worn down to 0 is not fuel.
+ * @param {Actor} actor The actor whose inventory is searched.
+ * @param {object} source The light source definition.
+ * @returns {Item[]} The matching fuel Items, or none when the source names no fuel.
+ */
+export function findFuel(actor, source) {
+  if ( !source.fuel ) return [];
+  // Fuel is spent only as a copy. A system that keeps oil as charges on the lantern itself
+  // (Cairn 2e) already fits a "charge" source; charges of a second Item would be a `consume`
+  // of the fuel's own, set here and in `choosePayment`, and need no change to stored data.
+  return findMatchingItems(actor, { ...source.fuel, consume: CONSUME_MODES.COPY });
 }
 
 /**

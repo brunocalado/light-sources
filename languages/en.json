@@ -62,6 +62,7 @@
       "Patterns": "{count} patterns",
       "ConsumeCopy": "Spends a copy",
       "ConsumeCharge": "Spends a charge",
+      "ConsumeFuel": "Burns {name}",
       "FreeForAll": "Free for all",
       "Coverable": "Can be covered",
       "Undroppable": "Can't be dropped",
@@ -153,9 +154,15 @@
         "ConsumeModes": {
           "none": "Nothing",
           "copy": "One copy of the item",
-          "charge": "One charge of the item"
+          "charge": "One charge of the item",
+          "fuel": "Fuel from another item"
         },
-        "ConsumeHint": "What lighting this source takes from the item. Nothing: the item is the light, like a lantern or a glowing blade. One copy: the item is a stack of identical lights, like five torches; one copy turns into the flame and no longer belongs to the stack. One charge: the item is a single object with uses, like a torch that can be lit three times or a wand with charges; the light burns on that item, goes out when the item leaves the actor, and travels with it when another module carries the item onto the map. A charge put out before it burns down keeps its time on the item, and the next lighting burns that time first without spending another charge. Only lighting spends: switching patterns, dropping and picking up never do.",
+        "ConsumeHint": "What lighting this source takes from the item. Nothing: the item is the light, like a lantern or a glowing blade. One copy: the item is a stack of identical lights, like five torches; one copy turns into the flame and no longer belongs to the stack. One charge: the item is a single object with uses, like a torch that can be lit three times or a wand with charges; the light burns on that item, goes out when the item leaves the actor, and travels with it when another module carries the item onto the map. A charge put out before it burns down keeps its time on the item, and the next lighting burns that time first without spending another charge. Fuel from another item: the item is the light and is never spent, like a lantern that burns oil flasks; each lighting spends one copy of the fuel item chosen below. Only lighting spends: switching patterns, dropping and picking up never do.",
+        "Fuel": "Fuel",
+        "FuelDrop": "Drag the fuel item here",
+        "FuelHint": "The item this source burns. The light item is never spent: each lighting spends one copy of this item instead, and without one the light cannot be lit. A flame put out before it burns down keeps its time on the light item, and the next lighting burns that time first without spending more fuel.",
+        "FuelMissing": "Drag the item this source burns as fuel onto the Fuel field before saving.",
+        "FuelIsSource": "A light source cannot burn itself as fuel. Drag a different item.",
         "Coverable": "Can Be Covered",
         "CoverableHint": "Adds a Stow control beside Drop in the Token HUD, covering the light instead of ending it: it stops shining but keeps burning down, and can be uncovered later with whatever time it has left. Meant for a light that is a spell on an object rather than a flame — a Light cantrip on a pebble is pocketed, not snuffed. Leave off for torches and lanterns.",
         "Droppable": "Can Be Dropped",
@@ -193,6 +200,7 @@
       "PickupBurnedOut": "The {item} had already burned out before it was picked up.",
       "NoGm": "No GM is connected to place the light. Ask a GM to log in and try again.",
       "NoItem": "{name} no longer carries {item}.",
+      "NoFuel": "{name} has no {fuel} to light {item}.",
       "OnGround": "The light of {item} is lying on the ground. Pick it up instead of lighting it again.",
       "Refused": "{item} could not be lit on {name}: the game system or another module refused the light effect.",
       "GmOnly": "Only the GM can control light sources."

@@ -171,10 +171,10 @@ function buildPalette(hud, actor, entries, active, ground) {
   for ( const { source, items } of entries ) {
     // A lone pattern is the implicit default and needs no secondary label.
     const multiPattern = source.patterns.length > 1;
-    // What a charge put out early kept, on the Item that lighting would burn first (see
-    // `choosePayment`), capped the same way. Not for the lit source: its other patterns
+    // What a charge or fuel put out early kept, on the Item that lighting would burn first
+    // (see `choosePayment`), capped the same way. Not for the lit source: its other patterns
     // reshape the flame already burning, and the flame button tells its time.
-    const kept = (source.consume === CONSUME_MODES.CHARGE) && (source.durationMinutes > 0)
+    const kept = [CONSUME_MODES.CHARGE, CONSUME_MODES.FUEL].includes(source.consume) && (source.durationMinutes > 0)
       && (active?.sourceId !== source.id)
       ? Math.min(items.map(getBurnLeft).find(s => s > 0) ?? 0, source.durationMinutes * 60)
       : 0;

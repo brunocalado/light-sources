@@ -7,7 +7,8 @@
  */
 
 import {
-  MODULE_ID, TEMPLATES, DEFAULT_LIGHT, DURATION_MODES, CONSUME_MODES, RANGE_PRESETS, DURATION_PRESETS, ADVANCED_LIGHT_KEYS
+  MODULE_ID, TEMPLATES, DEFAULT_LIGHT, DURATION_MODES, CONSUME_MODES, RANGE_PRESETS, DURATION_PRESETS, ADVANCED_LIGHT_KEYS,
+  DEFAULT_SOURCE_IMG
 } from "./constants.js";
 import { getSources, getRegisteredSource, editSource, makePattern } from "./helpers.js";
 import { buildLightData, patternForPhase, sweepLights } from "./light-manager.js";
@@ -214,6 +215,39 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
         this.#applyPreviewLight();
       });
     }
+
+    const fuelZone = this.element.querySelector(".ls-fuel-drop");
+    fuelZone?.addEventListener("dragover", event => event.preventDefault());
+    fuelZone?.addEventListener("drop", event => this.#onDropFuel(event, fuelZone));
+  }
+
+  /**
+   * Take an Item dropped on the fuel row as the source's fuel. Only the hidden input and
+   * the row's label change: re-rendering would throw away every other unsaved edit in the
+   * form, and nothing is stored until the GM saves.
+   * @param {DragEvent} event The drop event.
+   * @param {HTMLElement} zone The fuel row's drop zone.
+   * @returns {Promise<void>}
+   */
+  async #onDropFuel(event, zone) {
+    event.preventDefault();
+    const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
+    if ( data?.type !== "Item" ) return;
+    const item = await foundry.utils.fromUuid(data.uuid);
+    if ( !item ) return;
+    // The lantern burning itself as fuel would spend the light it is lighting.
+    if ( item.uuid === this.source?.uuid ) {
+      ui.notifications.warn("LIGHTSOURCES.LightEditor.Fields.FuelIsSource", { localize: true });
+      return;
+    }
+    zone.querySelector('input[name="fuelUuid"]').value = item.uuid;
+    const img = document.createElement("img");
+    img.src = item.img || DEFAULT_SOURCE_IMG;
+    img.alt = "";
+    const name = document.createElement("span");
+    name.textContent = item.name;
+    zone.querySelectorAll(":scope > :not(input)").forEach(el => el.remove());
+    zone.append(img, " ", name);
   }
 
   /**
@@ -398,6 +432,8 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
     const patterns = this.#draftPatterns ?? source.patterns;
     const registered = getRegisteredSource(this.options.sourceId);
     context.source = source;
+    // `strict: false`: a fuel from a pack that is not available here keeps the fallback icon.
+    context.fuelImg = (source.fuel && foundry.utils.fromUuidSync(source.fuel.uuid, { strict: false })?.img) || DEFAULT_SOURCE_IMG;
     // Only a name-only source the GM made can be renamed: an Item-backed source takes its
     // name from the Item, and a registered one from the module that registers it.
     context.renamable = !!source.id && !source.uuid && !registered;
@@ -576,13 +612,28 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
       // closeOnSubmit, so the GM keeps every other edit in the open form.
       throw new Error(game.i18n.format("LIGHTSOURCES.Config.Duplicate", { name }));
     }
+    const consume = Object.values(CONSUME_MODES).includes(data.consume) ? data.consume : CONSUME_MODES.NONE;
+    // A fuel source with no fuel could never be lit. Kept as stored unless another Item was
+    // dropped, so a fuel whose Item is gone still matches by its stored name and type.
+    let fuel = null;
+    if ( consume === CONSUME_MODES.FUEL ) {
+      const uuid = String(data.fuelUuid ?? "");
+      if ( !uuid ) throw new Error(game.i18n.localize("LIGHTSOURCES.LightEditor.Fields.FuelMissing"));
+      if ( uuid === current?.fuel?.uuid ) fuel = current.fuel;
+      else {
+        const item = await foundry.utils.fromUuid(uuid);
+        if ( !item ) throw new Error(game.i18n.localize("LIGHTSOURCES.LightEditor.Fields.FuelMissing"));
+        fuel = { uuid: item.uuid, name: item.name, type: item.type };
+      }
+    }
 
     // Saving a source a module registers stores the GM's own copy, which replaces the
     // registered values until it is restored (see `_onRestoreDefault` in
     // light-sources-config.js).
     await editSource(this.options.sourceId, source => {
       if ( name ) source.name = name;
-      source.consume = Object.values(CONSUME_MODES).includes(data.consume) ? data.consume : CONSUME_MODES.NONE;
+      source.consume = consume;
+      source.fuel = fuel;
       source.coverable = !!data.coverable;
       source.droppable = !!data.droppable;
       source.durationMode = data.durationMode === DURATION_MODES.REAL ? DURATION_MODES.REAL : DURATION_MODES.WORLD;

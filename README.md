@@ -129,6 +129,8 @@ To put it out, open the same menu and click **Extinguish Light**. If it burns ou
 
 If the source spends a charge each time it's lit — a lantern and its oil, say — putting it out early doesn't waste that charge. The time it had left stays with the item, and the next time you light it, it picks up where it stopped without spending another charge — hover its entry in the flame menu to see how much is left. Once that time runs out, the next lighting spends a fresh charge as usual.
 
+A lantern can also burn fuel from another item, such as a stack of oil flasks. In the light editor, set **Lighting Spends** to **Fuel from another item** and drag the oil onto the **Fuel** field. The lantern is the light and is never spent. Each lighting spends one oil flask, and with no oil left the lantern can't be lit. Put it out early and the time it had left stays on the lantern, so the next lighting burns that first without spending more oil.
+
 **Drop a light**: once a light is burning, a **Drop** button appears next to it in the flame menu. Click it to put that light on the ground as an Ambient Light — useful for torches left behind in a hallway or campfires. Your token goes dark and the light stays where you dropped it — on the same level (floor) as your token, at its elevation, so a torch dropped upstairs doesn't light the cellar. Nothing extra is consumed: you're putting down the light you already lit, not spending a second torch.
 
 ![Dropping a light source on the ground](docs/drop-light.gif)

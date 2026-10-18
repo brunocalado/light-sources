@@ -76,8 +76,8 @@ export const SETTINGS = {
  *   player get it automatically. A light another module manages keeps the flag but
  *   gets no control while that module is active (see `isManagedElsewhere`).
  * - `BURN_LEFT`: set on an Item, the whole seconds of burn time left when the flame
- *   of a `"charge"` source burning on it was put out. The next lighting of that Item
- *   burns them instead of spending a charge, and removes the flag. Counted on the
+ *   of a `"charge"` or `"fuel"` source burning on it was put out. The next lighting of that Item
+ *   burns them instead of spending a charge or fuel, and removes the flag. Counted on the
  *   source's own clock: game seconds or real seconds.
  * @type {{EFFECT_LIGHT: string, GROUND_LIGHT: string, INTERACTIVE: string, BURN_LEFT: string}}
  */
@@ -144,12 +144,15 @@ export const DURATION_MODES = {
  *   which no longer belongs to the stack.
  * - `charge`: one charge of a single object, through the charges path; the flame
  *   burns on that Item.
- * @type {{NONE: string, COPY: string, CHARGE: string}}
+ * - `fuel`: nothing from the light Item; one copy of the source's `fuel` Item (a lantern's
+ *   oil), through the quantity path. The flame burns on the light Item.
+ * @type {{NONE: string, COPY: string, CHARGE: string, FUEL: string}}
  */
 export const CONSUME_MODES = {
   NONE: "none",
   COPY: "copy",
-  CHARGE: "charge"
+  CHARGE: "charge",
+  FUEL: "fuel"
 };
 
 /**

@@ -251,6 +251,15 @@
     </div>
     <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.ConsumeHint"}}</p>
   </div>
+  <div class="form-group ls-fuel">
+    <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Fuel"}}</label>
+    <div class="form-fields ls-fuel-drop">
+      <input type="hidden" name="fuelUuid" value="{{source.fuel.uuid}}">
+      {{#if source.fuel}}<img src="{{fuelImg}}" alt=""> <span>{{source.fuel.name}}</span>
+      {{else}}<span class="ls-fuel-empty">{{localize "LIGHTSOURCES.LightEditor.Fields.FuelDrop"}}</span>{{/if}}
+    </div>
+    <p class="hint">{{localize "LIGHTSOURCES.LightEditor.Fields.FuelHint"}}</p>
+  </div>
   <div class="form-group">
     <label>{{localize "LIGHTSOURCES.LightEditor.Fields.Coverable"}}</label>
     <div class="form-fields">

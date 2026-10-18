@@ -91,7 +91,8 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
         : null,
       consumeLabel: {
         [CONSUME_MODES.COPY]: game.i18n.localize("LIGHTSOURCES.Config.ConsumeCopy"),
-        [CONSUME_MODES.CHARGE]: game.i18n.localize("LIGHTSOURCES.Config.ConsumeCharge")
+        [CONSUME_MODES.CHARGE]: game.i18n.localize("LIGHTSOURCES.Config.ConsumeCharge"),
+        [CONSUME_MODES.FUEL]: game.i18n.format("LIGHTSOURCES.Config.ConsumeFuel", { name: source.fuel?.name ?? "?" })
       }[source.consume] ?? null,
       // Only a source a module registers has a default behind it; one the GM added
       // by hand has nothing to restore to. The control is then rendered for all of

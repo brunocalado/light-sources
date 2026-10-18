@@ -12,7 +12,7 @@ import {
 } from "./constants.js";
 import {
   findMatchingItems, buildLightMessage, getItemRemaining, getQuantityPath, getChargesPath, getChargesSpentPath, getSources,
-  getAnnounceLit, getBurnLeft
+  getAnnounceLit, getBurnLeft, findFuel
 } from "./helpers.js";
 
 /**
@@ -286,26 +286,28 @@ async function createLightEffect(actor, source, pattern, timing, { stowed = fals
  * no item at all. When several items match, the first whose flame is not already lying
  * on the ground is the one lit — preferring, for a source that spends a charge, one that
  * kept the burn time of a charge put out early, which it burns instead of spending
- * another (see `rememberBurnLeft`). Nothing is spent here: `activateLight` spends only
- * once the light exists.
+ * another (see `rememberBurnLeft`). A source that burns fuel is the one case where the
+ * two differ: the flame burns on the lantern and a copy of its fuel pays. Nothing is
+ * spent here: `activateLight` spends only once the light exists.
  * @param {Actor} actor The actor being lit.
  * @param {object} source The registered light source definition.
- * @returns {{item: Item|null, itemId: string|null, resume: number}|null} The Item to spend
- *   one of (null when nothing is spent), the Item the flame burns on, and the seconds it
- *   burns for when it resumes a charge put out early (0 for a fresh light); or null when
- *   refused because nothing carried can pay, or because the flame of every matching item
- *   lies on the ground (a warning has been shown).
+ * @returns {{item: Item|null, itemId: string|null, resume: number, mode: string|null}|null}
+ *   The Item to spend one of (null when nothing is spent), the Item the flame burns on, the
+ *   seconds it burns for when it resumes a flame put out early (0 for a fresh light), and
+ *   what `item` is spent as (see CONSUME_MODES); or null when refused because nothing
+ *   carried can pay, or because the flame of every matching item lies on the ground (a
+ *   warning has been shown).
  */
 function choosePayment(actor, source) {
-  if ( source.freeForAll ) return { item: null, itemId: null, resume: 0 };
+  if ( source.freeForAll ) return { item: null, itemId: null, resume: 0, mode: null };
   const matches = findMatchingItems(actor, source);
   // A "copy" flame never belongs to its Item, so the stack can go on lighting copies
   // while earlier ones lie on the ground.
   const onGround = (source.consume === CONSUME_MODES.COPY) ? new Set() : itemsWithLightOnGround(actor);
   const free = matches.filter(i => !onGround.has(i.id));
-  // Only a charge is worth resuming: a "none" light starts a full duration for free anyway.
-  // Lighting the half-burned lantern first keeps a fresh one from spending its charge.
-  const resumable = (source.consume === CONSUME_MODES.CHARGE) && (source.durationMinutes > 0);
+  // Only what was paid for is worth resuming: a "none" light starts a full duration for
+  // free anyway. Lighting the half-burned lantern first keeps a fresh one from spending.
+  const resumable = [CONSUME_MODES.CHARGE, CONSUME_MODES.FUEL].includes(source.consume) && (source.durationMinutes > 0);
   const item = (resumable && free.find(i => getBurnLeft(i) > 0)) || free[0];
   if ( matches.length && !item ) {
     ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Hud.OnGround", { item: source.name }));
@@ -313,17 +315,32 @@ function choosePayment(actor, source) {
   }
   // A "none" source lights without an item, as 0.2.0 did through the API (a spell's
   // light, say); only a source that spends needs something to spend.
-  if ( source.consume === CONSUME_MODES.NONE ) return { item: null, itemId: item?.id ?? null, resume: 0 };
+  if ( source.consume === CONSUME_MODES.NONE ) return { item: null, itemId: item?.id ?? null, resume: 0, mode: null };
+  // Capped at the source's current duration, so a GM who shortens the source shortens
+  // the time a charge or fuel kept too.
+  const resume = (item && resumable) ? Math.min(getBurnLeft(item), source.durationMinutes * 60) : 0;
+  if ( source.consume === CONSUME_MODES.FUEL ) {
+    // `matches` holds only a lantern that can light now. One carried with no fuel and no
+    // kept time is looked up past that, so the warning names the fuel, not the lantern.
+    const lantern = item ?? findMatchingItems(actor, source, { anyCount: true }).find(i => !onGround.has(i.id));
+    if ( lantern && resume ) return { item: null, itemId: lantern.id, resume, mode: null };
+    const fuel = lantern && findFuel(actor, source)[0];
+    if ( lantern && !fuel ) {
+      ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Hud.NoFuel", {
+        name: actor.name, item: source.name, fuel: source.fuel?.name ?? "?"
+      }));
+      return null;
+    }
+    // The lantern is never spent: a copy of its fuel pays, and the flame burns on the lantern.
+    if ( lantern ) return { item: fuel, itemId: lantern.id, resume: 0, mode: CONSUME_MODES.COPY };
+  }
   if ( !item ) {
     ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Hud.NoItem", { name: actor.name, item: source.name }));
     return null;
   }
-  // Capped at the source's current duration, so a GM who shortens the source shortens
-  // the time a charge kept too.
-  const resume = resumable ? Math.min(getBurnLeft(item), source.durationMinutes * 60) : 0;
   // Chosen before the spend: the last charge takes the Item to 0, which hides it from
   // findMatchingItems, and it is still the Item that burns.
-  return { item, itemId: source.consume === CONSUME_MODES.COPY ? null : item.id, resume };
+  return { item, itemId: source.consume === CONSUME_MODES.COPY ? null : item.id, resume, mode: source.consume };
 }
 
 /**
@@ -331,7 +348,7 @@ function choosePayment(actor, source) {
  * else counts down. An unknown count spends nothing, as 0.2.0 did.
  * @param {Actor} actor The actor carrying the item.
  * @param {Item} item The item paying for the light.
- * @param {string} mode The source's `consume` mode (see CONSUME_MODES).
+ * @param {string} mode What the item is spent as (see CONSUME_MODES): a copy or a charge.
  * @returns {Promise<void>}
  */
 async function spendOne(actor, item, mode) {
@@ -424,16 +441,16 @@ export async function activateLight(actor, source, pattern) {
     ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Hud.Refused", { name: actor.name, item: source.name }));
     return false;
   }
-  if ( payment.item ) {
-    try {
-      // A charge put out early is paid for already: what it kept is burned, not another charge.
-      if ( payment.resume ) await payment.item.unsetFlag(MODULE_ID, FLAGS.BURN_LEFT);
-      else await spendOne(actor, payment.item, source.consume);
-    } catch(err) {
-      // A light that was not paid for does not stay lit.
-      await deactivateLight(actor);
-      throw err;
-    }
+  try {
+    // A flame put out early is paid for already: what it kept is burned, not another
+    // charge or fuel. The time was kept on the Item that burns, which for fuel is not
+    // the Item that pays.
+    if ( payment.resume ) await actor.items.get(payment.itemId)?.unsetFlag(MODULE_ID, FLAGS.BURN_LEFT);
+    else if ( payment.item ) await spendOne(actor, payment.item, payment.mode);
+  } catch(err) {
+    // A light that was not paid for does not stay lit.
+    await deactivateLight(actor);
+    throw err;
   }
 
   if ( !getAnnounceLit() ) return true;
@@ -1061,9 +1078,10 @@ export async function extinguishLight(actor) {
 
 /**
  * Keep on its Item the burn time a just-extinguished flame had left, when that flame
- * burned a charge: the next lighting of that Item burns it instead of another charge
- * (see `choosePayment`). Nothing else is worth keeping: a "none" light starts a full
- * duration for free, and a "copy" or free-for-all flame belongs to no Item.
+ * burned a charge or fuel: the next lighting of that Item burns it instead of spending
+ * again (see `choosePayment`). For fuel the time stays on the lantern, not on the fuel.
+ * Nothing else is worth keeping: a "none" light starts a full duration for free, and a
+ * "copy" or free-for-all flame belongs to no Item.
  *
  * Called only once the flame is out. Written the other way round, a flame that then
  * failed to go out would burn down with its time also kept on the Item, and that time
@@ -1075,7 +1093,7 @@ export async function extinguishLight(actor) {
 async function rememberBurnLeft(actor, flame) {
   if ( !flame?.itemId ) return;
   const source = getSources().find(s => s.id === flame.sourceId);
-  if ( source?.consume !== CONSUME_MODES.CHARGE ) return;
+  if ( ![CONSUME_MODES.CHARGE, CONSUME_MODES.FUEL].includes(source?.consume) ) return;
   const item = actor.items.get(flame.itemId);
   const seconds = Math.floor(flame.mode === DURATION_MODES.REAL
     ? (flame.expiresAtReal != null ? (flame.expiresAtReal - Date.now()) / 1000 : 0)

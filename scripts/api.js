@@ -64,8 +64,14 @@ export async function registerSources(entries, { managedBy = null } = {}) {
       console.warn(`${MODULE_ID} | Skipping light source entry missing a uuid or patterns array.`, entry);
       continue;
     }
+    // Fuel names a second Item, which only the GM picks, in the light editor.
+    if ( entry.consume === CONSUME_MODES.FUEL ) {
+      console.warn(`${MODULE_ID} | Skipping light source "${entry.uuid}": fuel is set by the GM in the light editor.`, entry);
+      continue;
+    }
     if ( (entry.consume !== undefined) && !Object.values(CONSUME_MODES).includes(entry.consume) ) {
-      console.warn(`${MODULE_ID} | Skipping light source "${entry.uuid}": consume must be one of ${Object.values(CONSUME_MODES).join(", ")}.`, entry);
+      const modes = Object.values(CONSUME_MODES).filter(m => m !== CONSUME_MODES.FUEL);
+      console.warn(`${MODULE_ID} | Skipping light source "${entry.uuid}": consume must be one of ${modes.join(", ")}.`, entry);
       continue;
     }
 
