@@ -66,7 +66,8 @@ export function exportToFile() {
  * types and data paths belong to a system.
  * @param {string} text The file's contents.
  * @returns {{records: object[], compatibility: object|null, report: {added: string[],
- *   replaced: string[], invalid: number, unresolved: string[], compatibility: string}}|null}
+ *   replaced: string[], invalid: number, unresolved: string[], unresolvedFuel: string[],
+ *   compatibility: string}}|null}
  *   What to write, and the report to show; null when the file is not a Light Sources
  *   export (a notification says so).
  */
@@ -83,7 +84,7 @@ export function readImport(text) {
   }
 
   const records = getGmSources();
-  const report = { added: [], replaced: [], invalid: 0, unresolved: [], compatibility: "absent" };
+  const report = { added: [], replaced: [], invalid: 0, unresolved: [], unresolvedFuel: [], compatibility: "absent" };
   for ( const raw of data.sources ) {
     const record = validateSource(raw, raw?.id ?? raw?.name ?? "?");
     if ( !record ) {
@@ -99,6 +100,8 @@ export function readImport(text) {
       report.added.push(record.name);
     }
     if ( record.uuid && !resolves(record.uuid) ) report.unresolved.push(record.name);
+    // The fuel is repaired in the light editor, not by relinking the source, so it is told apart.
+    if ( record.fuel && !resolves(record.fuel.uuid) ) report.unresolvedFuel.push(`${record.name} (${record.fuel.name})`);
   }
 
   let compatibility = null;

@@ -85,7 +85,8 @@ export class TransferConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 /**
  * The confirmation text listing what an import would do. Names come from a file the
  * GM may not have written, so each is escaped before it enters the HTML.
- * @param {{added: string[], replaced: string[], invalid: number, unresolved: string[], compatibility: string}} report
+ * @param {{added: string[], replaced: string[], invalid: number, unresolved: string[], unresolvedFuel: string[],
+ *   compatibility: string}} report
  * @returns {string} The dialog content.
  */
 function buildReport(report) {
@@ -101,6 +102,9 @@ function buildReport(report) {
   if ( report.invalid ) lines.push(game.i18n.format("LIGHTSOURCES.Transfer.Invalid", { count: report.invalid }));
   if ( report.unresolved.length ) {
     lines.push(game.i18n.format("LIGHTSOURCES.Transfer.Unresolved", { names: names(report.unresolved) }));
+  }
+  if ( report.unresolvedFuel.length ) {
+    lines.push(game.i18n.format("LIGHTSOURCES.Transfer.UnresolvedFuel", { names: names(report.unresolvedFuel) }));
   }
   const compatibility = {
     applied: "LIGHTSOURCES.Transfer.CompatApplied",

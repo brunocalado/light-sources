@@ -96,6 +96,7 @@
       "NoSources": "The file holds no light sources.",
       "Invalid": "Skips {count} that are not valid light sources.",
       "Unresolved": "These refer to an item that does not exist in this world, so they will only match carried items with the same name and type: {names}. Dragging the matching Item into Configure Light Sources links them.",
+      "UnresolvedFuel": "These burn a fuel item that does not exist in this world, so they will only burn carried fuel with the same name and type: {names}. Drop the fuel item on the Fuel field in each one's light editor to link it again.",
       "CompatApplied": "Replaces the system compatibility settings with the file's.",
       "CompatOtherSystem": "Keeps this world's system compatibility settings: the file comes from another game system.",
       "ConfirmQuestion": "Import?",
