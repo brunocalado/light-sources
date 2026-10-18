@@ -40,6 +40,7 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
       sendToChat: this.prototype._onSendToChat,
       toggleFreeForAll: this.prototype._onToggleFreeForAll,
       toggleHudHidden: this.prototype._onToggleHudHidden,
+      duplicateSource: this.prototype._onDuplicateSource,
       editSource: this.prototype._onEditSource,
       restoreDefault: this.prototype._onRestoreDefault,
       deleteSource: this.prototype._onDeleteSource
@@ -135,12 +136,13 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
     }
     // Same uuid catches one compendium entry seen under another language's name; same
     // name + type stays blocked because two such sources would fight over the same
-    // items through findMatchingItems' name fallback. Checked against the effective
+    // items through findMatchingItems' name fallback, and a name-only source (no type)
+    // matches any item with its name, so it blocks that name too. Checked against the effective
     // list, so an Item a module already registers is refused too. A source the GM
     // removed is still a record under that id, so it is refused as well: restoring it
     // is the way back.
     const taken = [...getSources(), ...getRemovedSources()];
-    if ( taken.some(s => (s.uuid === item.uuid) || ((s.name === item.name) && (s.type === item.type))) ) {
+    if ( taken.some(s => (s.uuid === item.uuid) || ((s.name === item.name) && (!s.type || (s.type === item.type)))) ) {
       ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Config.Duplicate", { name: item.name }));
       return;
     }
@@ -299,6 +301,54 @@ export class LightSourcesConfig extends HandlebarsApplicationMixin(ApplicationV2
     const sourceId = target.closest("[data-source-id]")?.dataset.sourceId;
     await editSource(sourceId, source => source.hudHidden = !source.hudHidden);
     this.render();
+  }
+
+  /**
+   * Copy the clicked source into a new one, as a starting point, and open the editor on
+   * the copy so it can be renamed. The copy starts as "<name> (Copy)", which matches no
+   * item until it is renamed. Declared in DEFAULT_OPTIONS.actions.
+   * @param {PointerEvent} event The originating click event.
+   * @param {HTMLElement} target The element bearing the data-action.
+   * @returns {Promise<void>}
+   */
+  async _onDuplicateSource(event, target) {
+    const sourceId = target.closest("[data-source-id]")?.dataset.sourceId;
+    const sources = getSources();
+    const source = sources.find(s => s.id === sourceId);
+    if ( !source ) return;
+    const taken = new Set(sources.map(s => s.name));
+    // 64 is the editor's name limit; the base is cut so the suffix always fits.
+    let name;
+    for ( let n = 1; !name || taken.has(name); n++ ) {
+      const key = (n === 1) ? "LIGHTSOURCES.Config.CopyName" : "LIGHTSOURCES.Config.CopyNameNumbered";
+      const suffix = game.i18n.format(key, { name: "", n }).length;
+      name = game.i18n.format(key, { name: source.name.slice(0, 64 - suffix).trim(), n });
+    }
+    // Always a name-only source of the GM's own: an Item-backed or registered source's
+    // id is its uuid, which a second source cannot share. Free for all and hidden start
+    // off, so a placeholder copy never shows up on every token's HUD.
+    const id = foundry.utils.randomID();
+    const records = getGmSources();
+    records.push({
+      id,
+      uuid: null,
+      name,
+      img: source.img,
+      type: null,
+      managedBy: null,
+      consume: source.consume,
+      freeForAll: false,
+      coverable: source.coverable,
+      droppable: source.droppable,
+      hudHidden: false,
+      durationMode: source.durationMode,
+      durationMinutes: source.durationMinutes,
+      endingMinutes: source.endingMinutes,
+      patterns: foundry.utils.deepClone(source.patterns)
+    });
+    await setGmSources(records);
+    this.render();
+    new LightSourceEditor({ sourceId: id, configApp: this }).render(true);
   }
 
   /**
