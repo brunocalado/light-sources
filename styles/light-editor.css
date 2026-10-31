@@ -231,6 +231,15 @@
     display: flex;
   }
 
+  /* Likewise the used-up row, for a source that spends a charge. */
+  .ls-discard {
+    display: none;
+  }
+
+  &:has(select[name="consume"] option[value="charge"]:checked) .ls-discard {
+    display: flex;
+  }
+
   .ls-fuel-drop {
     min-height: 2.25rem;
     padding: 0.25rem 0.5rem;

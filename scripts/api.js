@@ -18,7 +18,7 @@ import {
 /**
  * The usage fields a caller supplies, with the API's documented defaults filled in.
  * @param {object} entry The caller's light source definition.
- * @returns {{consume: string, freeForAll: boolean, coverable: boolean, droppable: boolean, hudHidden: boolean, durationMode: string, durationMinutes: number, endingMinutes: number}} The usage fields.
+ * @returns {{consume: string, freeForAll: boolean, coverable: boolean, droppable: boolean, hudHidden: boolean, discardSpent: boolean, durationMode: string, durationMinutes: number, endingMinutes: number}} The usage fields.
  */
 function usageFields(entry) {
   return {
@@ -27,6 +27,7 @@ function usageFields(entry) {
     coverable: entry.coverable ?? false,
     droppable: entry.droppable ?? true,
     hudHidden: entry.hudHidden ?? false,
+    discardSpent: entry.discardSpent ?? false,
     durationMode: entry.durationMode ?? DURATION_MODES.WORLD,
     durationMinutes: entry.durationMinutes ?? 0,
     endingMinutes: entry.endingMinutes ?? 0

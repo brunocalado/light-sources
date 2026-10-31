@@ -168,6 +168,8 @@
         "CoverableHint": "Adds a Stow control beside Drop in the Token HUD, covering the light instead of ending it: it stops shining but keeps burning down, and can be uncovered later with whatever time it has left. Meant for a light that is a spell on an object rather than a flame — a Light cantrip on a pebble is pocketed, not snuffed. Leave off for torches and lanterns.",
         "Droppable": "Can Be Dropped",
         "DroppableHint": "Offers Drop in the Token HUD while the light burns, putting it on the ground as an Ambient Light. Turn off for a light built into what the character wears, like glowing armor or a lamp fixed to a helmet: it stays on the token, and leaves only together with its item when another module carries the item off. Free for All lights also need the Allow Dropping Free for All Lights setting.",
+        "DiscardSpent": "Used Up When Spent",
+        "DiscardSpentHint": "For an item that spends a charge: once its last charge has burned out, the item is removed from the character's inventory instead of staying there at 0. Put out early, it keeps its time and is not removed. Dropped or handed to another character while lit, it stays.",
         "Duration": "Duration (minutes)",
         "DurationHint": "Minutes before the light goes out on its own (counted in the mode chosen below). Use 0 for an unlimited light that only goes out when extinguished manually.",
         "DurationPreset": "Duration Preset",

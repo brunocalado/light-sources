@@ -230,7 +230,12 @@ async function createLightEffect(actor, source, pattern, timing, { stowed = fals
   if ( stale.length ) {
     const flames = stale.map(e => e.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT));
     await actor.deleteEmbeddedDocuments("ActiveEffect", stale.map(e => e.id));
-    for ( const flame of flames ) await rememberBurnLeft(actor, flame);
+    for ( const flame of flames ) {
+      await rememberBurnLeft(actor, flame);
+      // Never the Item the new flame binds to: a pickup can rebind to the spent torch that
+      // was burning here (see `bindOnPickup`), and would then burn on an Item that is gone.
+      if ( flame.itemId !== itemId ) await discardSpent(actor, flame);
+    }
   }
 
   // World-time lights carry a native duration, so the effect shows how long the
@@ -860,6 +865,9 @@ export async function pickupLight(actor, light) {
   const { source, pattern, reason } = readFlame(ground);
   if ( reason ) {
     const key = reason === LIGHT_REASONS.BURNED_OUT ? "LIGHTSOURCES.Hud.PickupBurnedOut" : "LIGHTSOURCES.Hud.PickupSourceGone";
+    // The dropper's own torch is spent once its flame burns out on the ground. Picked up by
+    // anyone else, it is left to the sweep, since the picker may not own the dropper.
+    if ( (reason === LIGHT_REASONS.BURNED_OUT) && (ground.actorUuid === actor.uuid) ) await discardSpent(actor, ground);
     ui.notifications.warn(game.i18n.format(key, { item: ground.itemName }));
     return;
   }
@@ -1074,6 +1082,7 @@ export async function extinguishLight(actor) {
   // A cancelled deletion resolves without throwing; the flame is still burning then.
   if ( getLightEffect(actor) ) return;
   await rememberBurnLeft(actor, flame);
+  await discardSpent(actor, flame);
 }
 
 /**
@@ -1102,6 +1111,30 @@ async function rememberBurnLeft(actor, flame) {
 }
 
 /**
+ * Throw away the Item a flame burned on, when its source asks for that and the flame was its
+ * last: a "charge" source with `discardSpent`, an Item at 0 charges that kept no burn time.
+ * Called only once a flame has ended for good — extinguished, replaced, burned out — never when
+ * it moves, so a torch dropped or handed over lit stays the torch it is. Called after
+ * `rememberBurnLeft`, so a flame put out early keeps its time and its Item.
+ *
+ * The module does this rather than firing a hook for the system to: every system would repeat
+ * the "spent and no time kept" reasoning, and on the right client. Nor can the system delete the
+ * Item at 0 itself, because the last charge is spent while its flame burns (see `activateLight`).
+ * @param {Actor} actor The actor holding the Item the flame burned on.
+ * @param {object|null} flame The flame's `EFFECT_LIGHT` or `GROUND_LIGHT` payload.
+ * @returns {Promise<void>}
+ */
+async function discardSpent(actor, flame) {
+  if ( !flame?.itemId ) return;
+  const source = getSources().find(s => s.id === flame.sourceId);
+  if ( !source?.discardSpent || (source.consume !== CONSUME_MODES.CHARGE) ) return;
+  const item = actor?.items.get(flame.itemId);
+  if ( !item || (getBurnLeft(item) > 0) ) return;
+  const left = getItemRemaining(item, CONSUME_MODES.CHARGE);
+  if ( Number.isFinite(left) && (left <= 0) ) await item.delete();
+}
+
+/**
  * Deactivate the active light on several Actors, deleting each one's light
  * effect. Deletion is per-actor because ActiveEffects are embedded documents
  * with distinct parents.
@@ -1121,14 +1154,15 @@ export async function deactivateLights(actors) {
  * `expiresAtWorld`; a real-time light once wall-clock time passes `expiresAtReal`.
  * @param {Actor} actor The actor to inspect.
  * @param {number} now The current `Date.now()` timestamp.
- * @returns {Array<{actor: Actor, id: string, itemName: string}>} The expired entries.
+ * @returns {Array<{actor: Actor, id: string, itemName: string, flame: object}>} The expired
+ *   entries, each with its `EFFECT_LIGHT` payload.
  */
 function collectExpired(actor, now) {
   const expired = [];
   for ( const effect of actor.effects ) {
     const flag = effect.getFlag(MODULE_ID, FLAGS.EFFECT_LIGHT);
     if ( !flag ) continue;
-    if ( isExpired(flag, now) ) expired.push({ actor, id: effect.id, itemName: flag.itemName });
+    if ( isExpired(flag, now) ) expired.push({ actor, id: effect.id, itemName: flag.itemName, flame: flag });
   }
   return expired;
 }
@@ -1235,6 +1269,13 @@ async function sweepLightsOnce() {
       console.error(`${MODULE_ID} | Could not put out the burned-out light of ${actor.name}`, err);
     }
   }
+  for ( const { actor, flame } of expired ) {
+    try {
+      await discardSpent(actor, flame);
+    } catch(err) {
+      console.error(`${MODULE_ID} | Could not remove the spent item of ${actor.name}`, err);
+    }
+  }
 
   messages.push(...expired.map(({ actor, itemName }) => buildLightMessage(
     actor,
@@ -1299,6 +1340,16 @@ async function sweepLightsOnce() {
           game.i18n.localize("LIGHTSOURCES.Chat.GroundExpiredTitle"),
           game.i18n.format("LIGHTSOURCES.Chat.GroundExpired", { item: flag.itemName })
         )));
+        // A light dropped from the Token HUD left its Item on the dropper. A managed one took
+        // its Item along, and the package that placed it decides what becomes of it.
+        for ( const { flag } of burnedOut ) {
+          if ( flag.managedBy ) continue;
+          try {
+            await discardSpent(foundry.utils.fromUuidSync(flag.actorUuid), flag);
+          } catch(err) {
+            console.error(`${MODULE_ID} | Could not remove the spent item of a light that burned out on ${scene.name}`, err);
+          }
+        }
       } catch(err) {
         console.error(`${MODULE_ID} | Could not remove the burned-out lights on ${scene.name}`, err);
       }

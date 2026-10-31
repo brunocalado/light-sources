@@ -101,6 +101,9 @@ export function sourceField() {
     coverable: new f.BooleanField(),
     droppable: new f.BooleanField({ initial: true }),
     hudHidden: new f.BooleanField(),
+    // A "charge" source's Item is deleted once a flame of it ends for good with no charge and
+    // no kept time left: a torch lit for the last time is gone when it goes out.
+    discardSpent: new f.BooleanField(),
     durationMode: new f.StringField({ required: true, choices: Object.values(DURATION_MODES), initial: DURATION_MODES.WORLD }),
     durationMinutes: new f.NumberField({ required: true, nullable: false, integer: true, min: 0, initial: 0 }),
     // How many of the last minutes before burning out each pattern shows its `ending`

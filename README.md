@@ -70,6 +70,7 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 
    * **Can Be Covered** — on the same tab: whether this light can be stowed instead of extinguished (see below). Off by default.
    * **Can Be Dropped** — also on that tab: whether the Token HUD offers **Drop** while this light burns. On by default. Turn it off for a light built into what the character wears, such as glowing armor or a lamp fixed to a helmet: it stays on the token, and still leaves together with its item when a module carries that item off.
+   * **Used Up When Spent**: also on that tab, shown when the light spends a charge. Once the last charge has burned out, the item is removed from the character's inventory instead of staying there at 0, like a torch that can be lit three times. A light put out early keeps its time and its item, and so does one dropped or handed to another character while it burns. Off by default.
 
 Optional per-source toggles on the config window:
 * **Free for All** — when enabled, every actor of an enabled Actor Type can light this source without carrying the item.

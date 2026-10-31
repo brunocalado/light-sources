@@ -428,7 +428,7 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const source = this.source
-      ?? { patterns: [makePattern(DEFAULT_LIGHT, game.i18n.localize("LIGHTSOURCES.Patterns.Standard"))], consume: CONSUME_MODES.NONE, coverable: false, droppable: true, durationMode: DURATION_MODES.WORLD, durationMinutes: 0, endingMinutes: 0 };
+      ?? { patterns: [makePattern(DEFAULT_LIGHT, game.i18n.localize("LIGHTSOURCES.Patterns.Standard"))], consume: CONSUME_MODES.NONE, coverable: false, droppable: true, discardSpent: false, durationMode: DURATION_MODES.WORLD, durationMinutes: 0, endingMinutes: 0 };
     const patterns = this.#draftPatterns ?? source.patterns;
     const registered = getRegisteredSource(this.options.sourceId);
     context.source = source;
@@ -636,6 +636,8 @@ export class LightSourceEditor extends HandlebarsApplicationMixin(ApplicationV2)
       source.fuel = fuel;
       source.coverable = !!data.coverable;
       source.droppable = !!data.droppable;
+      // Left as ticked when the source moves off "charge": the runtime reads it only for charge.
+      source.discardSpent = !!data.discardSpent;
       source.durationMode = data.durationMode === DURATION_MODES.REAL ? DURATION_MODES.REAL : DURATION_MODES.WORLD;
       source.durationMinutes = Math.max(0, Math.round(Number(data.durationMinutes) || 0));
       source.endingMinutes = Math.max(0, Math.round(Number(data.endingMinutes) || 0));

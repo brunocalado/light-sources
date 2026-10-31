@@ -1,3 +1,10 @@
+# Unreleased
+
+### Added
+
+* **A torch can be used up.** In the light editor, a source that spends a charge can be marked **Used Up When Spent**, or registered with `discardSpent`: once its last charge burns out or is put out, the item is removed instead of staying at 0 charges. A light put out early, dropped or handed to another character keeps its item.
+
+
 # 0.10.0
 
 ### Added
