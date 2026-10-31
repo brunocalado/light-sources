@@ -223,7 +223,7 @@ It governs the Token HUD only. [`dropLightWithItem`](#droplightwithitemitem-wher
 #### `discardSpent`
 For a `consume: "charge"` source only: when `true`, the module deletes the Item a flame burned on once that flame **ends for good** and the Item has no charge left (read through the charges path, so a system with a charges-spent path is covered too) and kept no burn time. A torch that can be lit three times is gone after its third flame goes out, instead of staying in the inventory at 0. Defaults to `false`, and it is ignored for every other `consume` value.
 
-A flame ends for good when it is extinguished (the Token HUD or [`deactivate`](#deactivateactor)), replaced by lighting another source, or burns out on a token. A flame dropped from the Token HUD that burns out on the ground ends for good too: the Item still on the dropper is removed by the active GM's sweep, or as the dropper picks up the burned-out light.
+A flame ends for good when it is extinguished (the Token HUD or [`deactivate`](#deactivateactor)), replaced by lighting another source or by picking up another light from the Token HUD, or burns out on a token. A flame dropped from the Token HUD that burns out on the ground ends for good too: the Item still on the dropper is removed by the active GM's sweep, or as the dropper picks up the burned-out light.
 
 It never fires when the flame **moves**: dropped, picked up while still burning, handed over with [`handOverLight`](#handoverlightfromitem-toitem), or carried off with [`dropLightWithItem`](#droplightwithitemitem-where). A light placed through `dropLightWithItem` that burns out on the ground is left to the package that placed it, which holds the Item. A charge put out with time left keeps that time on its Item (see [`consume`](#consume)), so the Item stays. A torch dropped from the Token HUD and picked up by another actor leaves the dropper's spent Item where it is.
 
@@ -278,7 +278,7 @@ Returns `Promise<boolean>` — `true` when the source is now lit, `false` when i
 
 ## `deactivate(actor)`
 
-Puts out whatever light is burning on the actor, exactly as the Token HUD's extinguish control does. A no-op when nothing is lit. A `consume: "charge"` light, or one the GM set to burn fuel, keeps the time it had left on its Item, for its next lighting (see [`consume`](#consume)). For fuel, that Item is the lantern, not the fuel.
+Puts out whatever light is burning on the actor, exactly as the Token HUD's extinguish control does. A no-op when nothing is lit. A `consume: "charge"` light, or one the GM set to burn fuel, keeps the time it had left on its Item, for its next lighting (see [`consume`](#consume)). For fuel, that Item is the lantern, not the fuel. A [`discardSpent`](#discardspent) source whose Item has no charge left and kept no time has that Item removed instead.
 
 ```js
 await game.lightSources.deactivate(actor);
@@ -416,6 +416,7 @@ The module posts its own styled chat card for these light events, on every sourc
 | A light is extinguished | ❌ Silent. |
 | Switching between a source's patterns | ❌ Silent — the same flame is being reshaped, not lit. |
 | Covering or uncovering a light | ❌ Silent — nothing was lit or put out, mirroring extinguishing. |
+| A spent Item removed by [`discardSpent`](#discardspent) | ❌ Silent — the extinguish or burn-out it follows already tells the table. |
 | `dropLightWithItem`, `pickupGroundLight` and `handOverLight` | ❌ Silent — the calling module tells its own users. |
 
 The world setting **Announce Lights in Chat** turns off the "lit" card. The other cards always post, and there is no per-source way to opt out.

@@ -70,7 +70,7 @@ And then the table stops. The GM alt-tabs to the token settings, types a dim rad
 
    * **Can Be Covered** — on the same tab: whether this light can be stowed instead of extinguished (see below). Off by default.
    * **Can Be Dropped** — also on that tab: whether the Token HUD offers **Drop** while this light burns. On by default. Turn it off for a light built into what the character wears, such as glowing armor or a lamp fixed to a helmet: it stays on the token, and still leaves together with its item when a module carries that item off.
-   * **Used Up When Spent**: also on that tab, shown when the light spends a charge. Once the last charge has burned out, the item is removed from the character's inventory instead of staying there at 0, like a torch that can be lit three times. A light put out early keeps its time and its item, and so does one dropped or handed to another character while it burns. Off by default.
+   * **Used Up When Spent**: also on that tab, shown when the light spends a charge. When the light of its last charge goes out, whether it burns out or is put out, the item is removed from the character's inventory instead of staying there at 0, like a torch that can be lit three times. A light put out before its time runs out keeps that time and its item, and so does one dropped or handed to another character while it burns. Off by default.
 
 Optional per-source toggles on the config window:
 * **Free for All** — when enabled, every actor of an enabled Actor Type can light this source without carrying the item.
@@ -132,7 +132,7 @@ While something is burning, the flame button glows. Hover it to check what's lit
 
 To put it out, open the same menu and click **Extinguish Light**. If it burns out on its own first, everyone sees it happen in chat.
 
-If the source spends a charge each time it's lit — a lantern and its oil, say — putting it out early doesn't waste that charge. The time it had left stays with the item, and the next time you light it, it picks up where it stopped without spending another charge — hover its entry in the flame menu to see how much is left. Once that time runs out, the next lighting spends a fresh charge as usual.
+If the source spends a charge each time it's lit — a lantern and its oil, say — putting it out early doesn't waste that charge. The time it had left stays with the item, and the next time you light it, it picks up where it stopped without spending another charge — hover its entry in the flame menu to see how much is left. Once that time runs out, the next lighting spends a fresh charge as usual. If the GM marked the source **Used Up When Spent**, an item with no charges left leaves your sheet when its last light goes out.
 
 Some lanterns burn fuel from another item, such as a stack of oil flasks. Lighting one spends one flask, and the lantern stays on your sheet. With no oil left, the lantern doesn't show in the flame menu, unless it still has time kept from being put out early. That kept time burns first, without spending more oil.
 
