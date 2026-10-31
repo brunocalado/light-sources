@@ -169,7 +169,7 @@
         "Droppable": "Can Be Dropped",
         "DroppableHint": "Offers Drop in the Token HUD while the light burns, putting it on the ground as an Ambient Light. Turn off for a light built into what the character wears, like glowing armor or a lamp fixed to a helmet: it stays on the token, and leaves only together with its item when another module carries the item off. Free for All lights also need the Allow Dropping Free for All Lights setting.",
         "DiscardSpent": "Used Up When Spent",
-        "DiscardSpentHint": "For an item that spends a charge: once its last charge has burned out, the item is removed from the character's inventory instead of staying there at 0. Put out early, it keeps its time and is not removed. Dropped or handed to another character while lit, it stays.",
+        "DiscardSpentHint": "For an item that spends a charge: when the light of its last charge goes out, whether it burns out or is put out, the item is removed from the character's inventory instead of staying there at 0. Put out before its time runs out, it keeps that time and stays until that time is burned. Dropped or handed to another character while lit, it stays.",
         "Duration": "Duration (minutes)",
         "DurationHint": "Minutes before the light goes out on its own (counted in the mode chosen below). Use 0 for an unlimited light that only goes out when extinguished manually.",
         "DurationPreset": "Duration Preset",
