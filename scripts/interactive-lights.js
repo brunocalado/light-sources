@@ -133,7 +133,7 @@ class LightControl extends PIXI.Container {
 
     this.bg ??= this.addChild(new PIXI.Graphics());
     this.bg.clear().beginFill(0x000000, 1.0).drawRoundedRect(-2 * s, -2 * s, 44 * s, 44 * s, 5 * s).endFill();
-    this.bg.alpha = 0;
+    this.bg.alpha = 0.4;
 
     this.icon ??= this.addChild(new PIXI.Sprite());
     this.icon.width = this.icon.height = 40 * s;
@@ -184,8 +184,11 @@ class LightControl extends PIXI.Container {
 
     // Out of reach still shows — the player should see there is something to walk up
     // to — but faded, and without the pointer cursor promising a click that won't work.
+    // The plate drawn behind the icon stays faintly visible for the same reason the fade
+    // stops at 0.5: a white bulb inside its own bright light, or over pale art, otherwise
+    // all but vanishes. Core's door controls never fade below 0.6 for that reason.
     const reachable = this.isReachable;
-    this.icon.alpha = reachable ? 0.8 : 0.3;
+    this.icon.alpha = reachable ? 0.9 : 0.5;
     this.cursor = reachable ? "pointer" : null;
   }
 
@@ -203,7 +206,7 @@ class LightControl extends PIXI.Container {
     event.stopPropagation();
     if ( game.paused && !game.user.isGM ) return;
     this.border.visible = true;
-    this.bg.alpha = 0.25;
+    this.bg.alpha = 0.6;
     if ( this.isReachable ) this.icon.alpha = 1.0;
   }
 
@@ -218,8 +221,8 @@ class LightControl extends PIXI.Container {
     if ( event.nativeEvent && (event.nativeEvent.target.id !== canvas.app.view.id) ) return;
     event.stopPropagation();
     this.border.visible = false;
-    this.bg.alpha = 0;
-    this.icon.alpha = this.isReachable ? 0.8 : 0.3;
+    this.bg.alpha = 0.4;
+    this.icon.alpha = this.isReachable ? 0.9 : 0.5;
   }
 
   /* -------------------------------------------- */
