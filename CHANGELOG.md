@@ -1,6 +1,8 @@
-# Unreleased
+# 0.10.2
 
-- [Changed] A light's on/off control on the map has a faint dark backdrop and fades less when out of reach, so a lit light's control no longer disappears over bright art (#25).
+### Changed
+
+* **A light's on/off control is easier to see** (#25, thanks @MisaGER). The control on the map now has a faint dark backdrop and fades less when out of reach, so the control of a lit light no longer disappears over bright light or pale art.
 
 
 # 0.10.1
