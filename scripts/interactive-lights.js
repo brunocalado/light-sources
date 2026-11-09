@@ -187,6 +187,8 @@ class LightControl extends PIXI.Container {
     // The plate drawn behind the icon stays faintly visible for the same reason the fade
     // stops at 0.5: a white bulb inside its own bright light, or over pale art, otherwise
     // all but vanishes. Core's door controls never fade below 0.6 for that reason.
+    // A plate rather than a tint or a shadow filter: a yellow bulb in yellow torchlight has
+    // the same problem, and a filter per control costs a render pass on a layer of dozens.
     const reachable = this.isReachable;
     this.icon.alpha = reachable ? 0.9 : 0.5;
     this.cursor = reachable ? "pointer" : null;
