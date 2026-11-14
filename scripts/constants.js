@@ -34,9 +34,11 @@ export const MODULE_ID = "light-sources";
  * - `RESTRICT_PLAYER_CONTROL`: whether only the GM may activate, deactivate,
  *   drop or pick up a light source from the Token HUD (see
  *   `getRestrictPlayerControl` in `helpers.js`).
- * - `ANNOUNCE_LIT`: whether lighting a source posts a chat message (see
- *   `getAnnounceLit` in `helpers.js`).
- * @type {{GM_SOURCES: string, MENU: string, COMPAT_MENU: string, TRANSFER_MENU: string, ITEM_TYPES: string, ACTOR_TYPES: string, QUANTITY_PATH: string, CHARGES_PATH: string, CHARGES_SPENT_PATH: string, ALLOW_FREE_FOR_ALL_DROP: string, RESTRICT_PLAYER_CONTROL: string, ANNOUNCE_LIT: string}}
+ * - `CHAT_MENU`: the Chat Messages menu, where the GM picks which light events post a
+ *   chat card.
+ * - `CHAT_MESSAGES`: the hidden setting that menu writes, one Boolean per `CHAT_EVENTS`
+ *   entry (see `getChatEnabled` in `helpers.js`).
+ * @type {{GM_SOURCES: string, MENU: string, COMPAT_MENU: string, TRANSFER_MENU: string, ITEM_TYPES: string, ACTOR_TYPES: string, QUANTITY_PATH: string, CHARGES_PATH: string, CHARGES_SPENT_PATH: string, ALLOW_FREE_FOR_ALL_DROP: string, RESTRICT_PLAYER_CONTROL: string, CHAT_MENU: string, CHAT_MESSAGES: string}}
  */
 export const SETTINGS = {
   GM_SOURCES: "gmSources",
@@ -50,8 +52,19 @@ export const SETTINGS = {
   CHARGES_SPENT_PATH: "chargesSpentPath",
   ALLOW_FREE_FOR_ALL_DROP: "allowFreeForAllDrop",
   RESTRICT_PLAYER_CONTROL: "restrictPlayerControl",
-  ANNOUNCE_LIT: "announceLit"
+  CHAT_MENU: "chatMenu",
+  CHAT_MESSAGES: "chatMessages"
 };
+
+/**
+ * The light events that can post a chat card, in the order the Chat Messages window
+ * lists them. `burnedOut` covers a light burning out both on a token and on the ground:
+ * for the table it is the same news, so two switches would only be noise (splitting them
+ * later is one more key here). One switch per event, rather than one that silences every
+ * card, because a table that mutes the noisy "lit" card still wants the burn-out warning.
+ * @type {string[]}
+ */
+export const CHAT_EVENTS = ["lit", "dropped", "pickedUp", "burnedOut"];
 
 /**
  * Flag keys stored under the MODULE_ID scope.
@@ -181,13 +194,14 @@ export const SYSTEM_PRESETS = {
 
 /**
  * Handlebars template paths used by the module's Applications.
- * @type {{CONFIG: string, LIGHT_EDITOR: string, COMPAT: string, TRANSFER: string}}
+ * @type {{CONFIG: string, LIGHT_EDITOR: string, COMPAT: string, TRANSFER: string, CHAT: string}}
  */
 export const TEMPLATES = {
   CONFIG: `modules/${MODULE_ID}/templates/light-sources-config.hbs`,
   LIGHT_EDITOR: `modules/${MODULE_ID}/templates/light-editor.hbs`,
   COMPAT: `modules/${MODULE_ID}/templates/compatibility-config.hbs`,
-  TRANSFER: `modules/${MODULE_ID}/templates/transfer-config.hbs`
+  TRANSFER: `modules/${MODULE_ID}/templates/transfer-config.hbs`,
+  CHAT: `modules/${MODULE_ID}/templates/chat-config.hbs`
 };
 
 /**

@@ -12,7 +12,7 @@ import {
 } from "./constants.js";
 import {
   findMatchingItems, buildLightMessage, getItemRemaining, getQuantityPath, getChargesPath, getChargesSpentPath, getSources,
-  getAnnounceLit, getBurnLeft, findFuel
+  getChatEnabled, getBurnLeft, findFuel
 } from "./helpers.js";
 
 /**
@@ -458,7 +458,7 @@ export async function activateLight(actor, source, pattern) {
     throw err;
   }
 
-  if ( !getAnnounceLit() ) return true;
+  if ( !getChatEnabled("lit") ) return true;
 
   // Name the pattern only when the source has more than one: a lone pattern is
   // the implicit default and its name carries no information (it may be empty).
@@ -584,6 +584,8 @@ export async function dropLight(actor, source, pattern, token) {
   // than announce a light that does not exist. `placeAmbientLight` reports the cause,
   // and the flame is still burning on the token.
   if ( !placed ) return;
+
+  if ( !getChatEnabled("dropped") ) return;
 
   await ChatMessage.implementation.createDocuments([
     buildLightMessage(
@@ -883,6 +885,8 @@ export async function pickupLight(actor, light) {
     ui.notifications.warn(game.i18n.format("LIGHTSOURCES.Hud.Refused", { name: actor.name, item: source.name }));
     return;
   }
+
+  if ( !getChatEnabled("pickedUp") ) return;
 
   await ChatMessage.implementation.createDocuments([
     buildLightMessage(
@@ -1277,11 +1281,13 @@ async function sweepLightsOnce() {
     }
   }
 
-  messages.push(...expired.map(({ actor, itemName }) => buildLightMessage(
-    actor,
-    game.i18n.localize("LIGHTSOURCES.Chat.ExpiredTitle"),
-    game.i18n.format("LIGHTSOURCES.Chat.Expired", { actor: actor.name, item: itemName })
-  )));
+  if ( getChatEnabled("burnedOut") ) {
+    messages.push(...expired.map(({ actor, itemName }) => buildLightMessage(
+      actor,
+      game.i18n.localize("LIGHTSOURCES.Chat.ExpiredTitle"),
+      game.i18n.format("LIGHTSOURCES.Chat.Expired", { actor: actor.name, item: itemName })
+    )));
+  }
 
   // The flames still burning on a token take the look of their phase. `disabled` is
   // left alone: a covered flame changes its look and stays covered.
@@ -1333,13 +1339,15 @@ async function sweepLightsOnce() {
       try {
         await scene.deleteEmbeddedDocuments("AmbientLight", burnedOut.map(({ light }) => light.id));
         for ( const { light } of burnedOut ) forgetLightHistory(scene, light.id);
-        messages.push(...burnedOut.map(({ flag }) => buildLightMessage(
-          // The actor is only the speaker here; a dropped light outlives its owner's
-          // token being deleted, so a missing actor just yields a generic speaker.
-          foundry.utils.fromUuidSync(flag.actorUuid) ?? undefined,
-          game.i18n.localize("LIGHTSOURCES.Chat.GroundExpiredTitle"),
-          game.i18n.format("LIGHTSOURCES.Chat.GroundExpired", { item: flag.itemName })
-        )));
+        if ( getChatEnabled("burnedOut") ) {
+          messages.push(...burnedOut.map(({ flag }) => buildLightMessage(
+            // The actor is only the speaker here; a dropped light outlives its owner's
+            // token being deleted, so a missing actor just yields a generic speaker.
+            foundry.utils.fromUuidSync(flag.actorUuid) ?? undefined,
+            game.i18n.localize("LIGHTSOURCES.Chat.GroundExpiredTitle"),
+            game.i18n.format("LIGHTSOURCES.Chat.GroundExpired", { item: flag.itemName })
+          )));
+        }
         // A light dropped from the Token HUD left its Item on the dropper. A managed one took
         // its Item along, and the package that placed it decides what becomes of it.
         for ( const { flag } of burnedOut ) {

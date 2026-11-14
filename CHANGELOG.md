@@ -1,3 +1,8 @@
+# Unreleased
+
+- [Breaking][Changed] The "Announce Lights in Chat" setting is replaced by a **Chat Messages** window (Game Settings → Light Sources) with a toggle for each announcement: lit, dropped, picked up and burned out. All start on, so a table that had turned off lighting announcements turns it off again there. (#4)
+
+
 # 0.10.2
 
 ### Changed

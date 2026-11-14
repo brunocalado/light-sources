@@ -326,14 +326,12 @@ export function getRestrictPlayerControl() {
 }
 
 /**
- * Whether lighting a source should post the "{actor} lights {item}" chat card.
- * Gates only that announcement — extinguishing, dropping, picking up and
- * burning out keep announcing regardless, since a GM who wants quieter chat
- * about *lighting* still typically wants those other events called out.
- * @returns {boolean} True when lighting a source announces in chat.
+ * Whether a light event posts its chat card, as set in the Chat Messages window.
+ * @param {"lit"|"dropped"|"pickedUp"|"burnedOut"} event One of CHAT_EVENTS.
+ * @returns {boolean} True when the event announces in chat.
  */
-export function getAnnounceLit() {
-  return game.settings.get(MODULE_ID, SETTINGS.ANNOUNCE_LIT) ?? true;
+export function getChatEnabled(event) {
+  return game.settings.get(MODULE_ID, SETTINGS.CHAT_MESSAGES)[event] ?? true;
 }
 
 /**

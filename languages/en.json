@@ -24,9 +24,33 @@
         "Name": "Restrict Light Control to the GM",
         "Hint": "Only the GM can activate, extinguish, drop or pick up a light source from the Token HUD. Players still see the palette and the lit/unlit state, but their clicks on those controls are refused."
       },
-      "AnnounceLit": {
-        "Name": "Announce Lights in Chat",
-        "Hint": "Post a chat message whenever a light source is lit. Other light events (dropped, picked up, burned out) are unaffected."
+      "Chat": {
+        "Name": "Chat Messages",
+        "Label": "Configure Chat Messages",
+        "Hint": "Choose which light events post a card in chat. GM only."
+      }
+    },
+    "ChatConfig": {
+      "Title": "Chat Messages",
+      "Hint": "Each light event below posts a card in chat while its switch is on.",
+      "Save": "Save",
+      "Events": {
+        "lit": {
+          "Label": "Lit",
+          "Hint": "A character lights a source."
+        },
+        "dropped": {
+          "Label": "Dropped",
+          "Hint": "A lit source is dropped on the ground."
+        },
+        "pickedUp": {
+          "Label": "Picked Up",
+          "Hint": "A lit source is picked up from the ground."
+        },
+        "burnedOut": {
+          "Label": "Burned Out",
+          "Hint": "A light runs out, carried or on the ground."
+        }
       }
     },
     "Config": {

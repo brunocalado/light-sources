@@ -6,11 +6,12 @@
  * it under the terms of the GNU General Public License version 3.
  */
 
-import { MODULE_ID, SETTINGS, SOCKET_EVENT, SYSTEM_PRESETS, EXPIRY_EVENT } from "./constants.js";
+import { MODULE_ID, SETTINGS, SOCKET_EVENT, SYSTEM_PRESETS, EXPIRY_EVENT, CHAT_EVENTS } from "./constants.js";
 import { sourceField } from "./helpers.js";
 import { LightSourcesConfig } from "./light-sources-config.js";
 import { CompatibilityConfig } from "./compatibility-config.js";
 import { TransferConfig } from "./transfer-config.js";
+import { ChatConfig } from "./chat-config.js";
 import { registerTokenHudHooks } from "./token-hud.js";
 import { registerInteractiveLightHooks } from "./interactive-lights.js";
 import { startExpiryTicker, sweepLights, handleSocketMessage, onDeleteItem } from "./light-manager.js";
@@ -93,13 +94,13 @@ Hooks.once("init", () => {
     default: false
   });
 
-  game.settings.register(MODULE_ID, SETTINGS.ANNOUNCE_LIT, {
-    name: "LIGHTSOURCES.Settings.AnnounceLit.Name",
-    hint: "LIGHTSOURCES.Settings.AnnounceLit.Hint",
+  // One Boolean per announcement, all on. A key added to CHAT_EVENTS later reads as its
+  // `initial` in a world that stored the older object, since core cleans on read.
+  const { SchemaField, BooleanField } = foundry.data.fields;
+  game.settings.register(MODULE_ID, SETTINGS.CHAT_MESSAGES, {
     scope: "world",
-    config: true,
-    type: Boolean,
-    default: true
+    config: false,
+    type: new SchemaField(Object.fromEntries(CHAT_EVENTS.map(e => [e, new BooleanField({ initial: true })])))
   });
 
   game.settings.registerMenu(MODULE_ID, SETTINGS.MENU, {
@@ -126,6 +127,15 @@ Hooks.once("init", () => {
     hint: "LIGHTSOURCES.Settings.Transfer.Hint",
     icon: "fa-solid fa-file-export",
     type: TransferConfig,
+    restricted: true
+  });
+
+  game.settings.registerMenu(MODULE_ID, SETTINGS.CHAT_MENU, {
+    name: "LIGHTSOURCES.Settings.Chat.Name",
+    label: "LIGHTSOURCES.Settings.Chat.Label",
+    hint: "LIGHTSOURCES.Settings.Chat.Hint",
+    icon: "fa-solid fa-comment",
+    type: ChatConfig,
     restricted: true
   });
 });

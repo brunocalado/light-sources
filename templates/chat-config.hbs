@@ -1,0 +1,23 @@
+<div class="ls-chat-main">
+  <p class="hint">{{localize "LIGHTSOURCES.ChatConfig.Hint"}}</p>
+  <ul class="ls-chat-list">
+    {{#each events}}
+    <li class="ls-chat-event">
+      <label>
+        <input type="checkbox" name="events.{{this.id}}" {{checked this.checked}}>
+        <span class="ls-chat-text">
+          <span class="ls-chat-label">{{localize this.label}}</span>
+          <span class="hint">{{localize this.hint}}</span>
+        </span>
+      </label>
+    </li>
+    {{/each}}
+  </ul>
+
+  <footer class="form-footer">
+    <button type="submit">
+      <i class="fa-solid fa-floppy-disk" inert></i>
+      <span>{{localize "LIGHTSOURCES.ChatConfig.Save"}}</span>
+    </button>
+  </footer>
+</div>
