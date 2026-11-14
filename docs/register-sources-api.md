@@ -419,7 +419,7 @@ The module posts its own styled chat card for these light events, on every sourc
 | A spent Item removed by [`discardSpent`](#discardspent) | ❌ Silent — the extinguish or burn-out it follows already tells the table. |
 | `dropLightWithItem`, `pickupGroundLight` and `handOverLight` | ❌ Silent — the calling module tells its own users. |
 
-The world setting **Announce Lights in Chat** turns off the "lit" card. The other cards always post, and there is no per-source way to opt out.
+The four ✅ cards are on by default. The GM can turn each one off in the world settings, under **Chat Messages**, with one switch for each: **Lit**, **Dropped**, **Picked Up** and **Burned Out** (on a token or on the ground). A switched-off card is the only thing skipped: the light is still lit, spent, dropped, picked up or put out the same way. The switches cover the whole world. A single source cannot opt out on its own.
 
 ---
 
