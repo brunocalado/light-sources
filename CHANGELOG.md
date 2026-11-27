@@ -1,3 +1,10 @@
+# Unreleased
+
+### Changed
+
+* **Updated French translation** (#27, thanks @Mystery-Man-From-Ouperspace). Covers the new Chat Messages window and the rest of the current interface.
+
+
 # 0.10.3
 
 ### Changed
